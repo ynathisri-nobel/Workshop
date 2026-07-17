@@ -1,0 +1,30 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# --- Secrets / config ---
+.env
+.env.*
+*.pem
+*.key
+
+# --- App data (do NOT commit user data) ---
+backend/crm.db
+*.db
+*.sqlite
+*.sqlite3
+backend/uploads/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Whisper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="static/styles.css" />
+</head>
+<body>
+  <!-- Login -->
+  <div id="login-view" class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">🫧</div>
+      <h1>Whisper</h1>
+      <p class="sub">Customer &amp; partner intelligence for executives</p>
+      <input id="login-user" placeholder="Username" autocomplete="username" />
+      <input id="login-pass" type="password" placeholder="Password" autocomplete="current-password" />
+      <button id="login-btn">Sign in</button>
+      <div id="login-err" class="err"></div>
+      <div class="hint">Demo: <b>exec/exec123</b> (executive) · <b>sales1/sales123</b> · <b>viewer/view123</b> · <b>admin/admin123</b></div>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app-view" class="hidden">
+    <header>
+      <div class="brand"><span class="brand-logo">🫧</span> Whisper</div>
+      <nav>
+        <button class="tab active" data-tab="chat">💬 Ask</button>
+        <button class="tab" data-tab="input">📥 Add Data</button>
+        <button class="tab" data-tab="issues">⚠️ Issues</button>
+        <button class="tab" data-tab="entities">🏢 Customers/Partners</button>
+        <button class="tab input-guard" data-tab="manage">🛠️ Manage Data</button>
+        <button class="tab admin-only hidden" data-tab="admin">👤 Users</button>
+      </nav>
+      <div class="user-box">
+        <span id="who"></span>
+        <button id="logout">Logout</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- CHAT -->
+      <section id="tab-chat" class="tab-panel">
+        <div class="chat-shell">
+          <aside class="chat-sidebar">
+            <button id="new-chat" class="new-chat-btn">✏️ New chat</button>
+            <div class="conv-head">Chat history (last 20)</div>
+            <div id="conv-list" class="conv-list"></div>
+          </aside>
+          <div class="chat-main">
+            <div class="chat-toolbar">
+              <div class="combo" style="max-width:300px">
+                <input id="chat-entity" class="combo-input" autocomplete="off"
+                       placeholder="🔍 Type a customer/partner name (blank = all)" />
+                <div class="combo-menu hidden"></div>
+              </div>
+            </div>
+            <div id="chat-log" class="chat-log"></div>
+            <div class="chat-input">
+              <textarea id="chat-text" rows="1" placeholder="Send a message... (Enter to send, Shift+Enter for a new line)"></textarea>
+              <button id="chat-send" title="Send">➤</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INPUT -->
+      <section id="tab-input" class="tab-panel hidden">
+        <div class="grid2">
+          <div class="card">
+            <h3>📝 Type Data (Chat / Notes)</h3>
+            <div class="combo"><input id="in-entity" class="combo-input" autocomplete="off" placeholder="🔍 Select a customer/partner (type to search)" /><div class="combo-menu hidden"></div></div>
+            <label>Date <input id="in-date" type="date" /></label>
+            <textarea id="in-text" rows="6" placeholder="Type notes / information from the customer or partner..."></textarea>
+            <label>Confidentiality
+              <select id="in-sens"><option value="1">1 - Normal</option><option value="2">2 - Confidential</option><option value="3">3 - Highly confidential</option></select>
+            </label>
+            <label>Data type
+              <select id="in-flag"><option value="">🤖 Let AI classify Fact/Opinion automatically</option><option value="fact">✅ Fact</option><option value="opinion">💭 Opinion</option></select>
+            </label>
+            <label>🖼️ Attach image (optional — AI will read/describe it for search and show it in chat)
+              <input type="file" id="in-image" accept="image/png,image/jpeg,image/gif,image/webp" />
+            </label>
+            <button id="in-text-btn">Save data</button>
+            <div class="msg" id="in-text-msg"></div>
+          </div>
+
+          <div class="card">
+            <h3>📎 Upload File (Word / Excel / PPT / PDF / Minutes)</h3>
+            <div class="combo"><input id="up-entity" class="combo-input" autocomplete="off" placeholder="🔍 Select a customer/partner (type to search)" /><div class="combo-menu hidden"></div></div>
+            <input type="file" id="up-file" accept=".docx,.xlsx,.pptx,.pdf,.txt,.md,.csv" />
+            <label>Confidentiality
+              <select id="up-sens"><option value="1">1 - Normal</option><option value="2">2 - Confidential</option><option value="3">3 - Highly confidential</option></select>
+            </label>
+            <button id="up-btn">Upload &amp; process</button>
+            <div class="msg" id="up-msg"></div>
+          </div>
+
+          <div class="card">
+            <h3>🗓️ Log a Meeting / Client Visit</h3>
+            <div class="combo"><input id="mt-entity" class="combo-input" autocomplete="off" placeholder="🔍 Select a customer/partner (type to search)" /><div class="combo-menu hidden"></div></div>
+            <input id="mt-date" type="date" />
+            <input id="mt-ours" placeholder="Our attendees" />
+            <input id="mt-theirs" placeholder="Their attendees (customer/partner)" />
+            <textarea id="mt-summary" rows="4" placeholder="Meeting summary / what was discussed"></textarea>
+            <label>Confidentiality
+              <select id="mt-sens"><option value="1">1 - Normal</option><option value="2">2 - Confidential</option><option value="3">3 - Highly confidential</option></select>
+            </label>
+            <label>🖼️ Attach image (optional — e.g. whiteboard/slide/business card)
+              <input type="file" id="mt-image" accept="image/png,image/jpeg,image/gif,image/webp" />
+            </label>
+            <button id="mt-btn">Save meeting</button>
+            <div class="msg" id="mt-msg"></div>
+          </div>
+
+          <div class="card">
+            <h3>⚠️ Add an Open Issue</h3>
+            <div class="combo"><input id="is-entity" class="combo-input" autocomplete="off" placeholder="🔍 Select a customer/partner (type to search)" /><div class="combo-menu hidden"></div></div>
+            <label>Date <input id="is-date" type="date" /></label>
+            <input id="is-title" placeholder="Issue title" />
+            <textarea id="is-desc" rows="3" placeholder="Details"></textarea>
+            <label>Priority
+              <select id="is-pri"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+            </label>
+            <label>Confidentiality
+              <select id="is-sens"><option value="1">1 - Normal</option><option value="2">2 - Confidential</option><option value="3">3 - Highly confidential</option></select>
+            </label>
+            <button id="is-btn">Save issue</button>
+            <div class="msg" id="is-msg"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ISSUES -->
+      <section id="tab-issues" class="tab-panel hidden">
+        <div class="issues-head">
+          <button id="iss-open-btn" class="seg active">⚠️ Open</button>
+          <button id="iss-resolved-btn" class="seg">✅ Resolved (history)</button>
+          <div class="combo" style="flex:1;min-width:220px">
+            <input id="iss-filter" class="combo-input" autocomplete="off" placeholder="🔍 Filter by customer/partner (blank = all)" />
+            <div class="combo-menu hidden"></div>
+          </div>
+        </div>
+        <div id="issues-list"></div>
+      </section>
+
+      <!-- ENTITIES -->
+      <section id="tab-entities" class="tab-panel hidden">
+        <div class="card input-guard" style="margin-bottom:16px">
+          <h3>➕ Add Customer / Partner</h3>
+          <div class="grid2">
+            <div>
+              <input id="ne-name" placeholder="Primary (display) name *" />
+              <input id="ne-short" placeholder="Internal short name (e.g. SCG)" />
+              <input id="ne-th" placeholder="Thai name" />
+              <input id="ne-en" placeholder="English name" />
+            </div>
+            <div>
+              <input id="ne-reg" placeholder="Registration number (if any)" />
+              <input id="ne-ticker" placeholder="SET ticker (if listed, e.g. SCC)" />
+              <label>Type
+                <select id="ne-type"><option value="customer">Customer</option><option value="partner">Partner</option></select>
+              </label>
+              <input id="ne-industry" placeholder="Industry (e.g. banking, construction)" />
+              <input id="ne-dept" placeholder="Customer group / owner department (e.g. sales, finance, general)" />
+              <textarea id="ne-notes" rows="2" placeholder="Notes / extra details (optional)"></textarea>
+            </div>
+          </div>
+          <button id="ne-btn">Add entry</button>
+          <div class="msg" id="ne-msg"></div>
+        </div>
+        <div class="grid2">
+          <div class="card"><h3>Directory</h3><div id="entities-list"></div></div>
+          <div class="card"><h3>Details</h3><div id="entity-detail">Select from the list</div></div>
+        </div>
+      </section>
+
+      <!-- MANAGE / CORRECT DATA -->
+      <section id="tab-manage" class="tab-panel hidden">
+        <div class="card">
+          <h3>🛠️ Manage / Correct Knowledge Base</h3>
+          <p class="m">Search stored data, then <b>edit</b> (auto re-embedded) or <b>delete</b> · 🚩 = reported as possibly incorrect</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <div class="combo" style="flex:1;min-width:220px">
+              <input id="mg-entity" class="combo-input" autocomplete="off" placeholder="🔍 Filter by customer/partner (blank = all)" />
+              <div class="combo-menu hidden"></div>
+            </div>
+            <input id="mg-q" placeholder="Search text..." style="flex:1;min-width:180px;padding:10px;border:1px solid var(--line);border-radius:8px" />
+            <label class="chk" style="margin:0"><input type="checkbox" id="mg-flagged" /> Reported only 🚩</label>
+            <button id="mg-search">Search</button>
+          </div>
+          <div id="manage-list"></div>
+        </div>
+      </section>
+
+      <!-- ADMIN -->
+      <section id="tab-admin" class="tab-panel hidden">
+        <div class="grid2">
+          <div class="card">
+            <h3>Add User + Access Rights</h3>
+            <input id="nu-user" placeholder="username" />
+            <input id="nu-pass" placeholder="password" />
+            <input id="nu-name" placeholder="Full name" />
+            <label>Role <select id="nu-role"><option>viewer</option><option>manager</option><option>executive</option><option>admin</option></select></label>
+            <label>Customer groups / departments this user can access
+              <input id="nu-dept" placeholder="e.g. sales or sales,finance (comma-separated) · all = every group" />
+            </label>
+            <label>Can view up to confidentiality level
+              <select id="nu-sens"><option value="1">1 - Normal</option><option value="2">2 - Confidential</option><option value="3">3 - Highly confidential</option></select>
+            </label>
+            <label class="chk"><input type="checkbox" id="nu-input" /> Allow data input</label>
+            <button id="nu-btn">Create user</button>
+            <div class="msg" id="nu-msg"></div>
+          </div>
+          <div class="card"><h3>All Users</h3><div id="users-list"></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="static/app.js"></script>
+</body>
+</html>
