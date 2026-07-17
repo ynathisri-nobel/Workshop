@@ -21,8 +21,17 @@ function jsonPost(path, body) {
 }
 const $ = (id) => document.getElementById(id);
 
+// Toggle a password field between hidden/visible (eye button).
+function togglePass(id, btn){
+  const el = document.getElementById(id);
+  if (!el) return;
+  const show = el.type === "password";
+  el.type = show ? "text" : "password";
+  if (btn) btn.textContent = show ? "🙈" : "👁️";
+}
+
 // ---- มาสคอตผู้ช่วย (ตัวการ์ตูนฟองอากาศน่ารักที่ "ตอบ") ----
-const BOT_FACE = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="15" cy="17.5" r="2.7" fill="#fff"/><circle cx="25" cy="17.5" r="2.7" fill="#fff"/><path d="M13.5 24c2.2 2.8 10.8 2.8 13 0" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+const BOT_FACE = `<img src="static/Picture/Logoicon.png" alt="Whisper" />`;
 
 function todayStr(){ return new Date().toLocaleDateString("en-CA"); }  // YYYY-MM-DD (local)
 const _MONTHS = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
@@ -418,8 +427,24 @@ function sourcesHtml(sources){
 function bubbleHtml(m){
   if (m.role === "user")
     return `<div class="bubble user"><div class="body">${esc(m.text)}</div></div>`;
-  const body = `<div class="md">${renderMarkdown(m.text)}</div>` + sourcesHtml(m.sources);
+  const body = `<div class="md">${renderMarkdown(m.text)}</div>` + chatImagesHtml(m.sources) + sourcesHtml(m.sources);
   return `<div class="bubble bot"><div class="avatar">${BOT_FACE}</div><div class="body">${body}</div></div>`;
+}
+
+// Show any images from cited sources inline in the answer (not hidden inside the
+// collapsed sources panel), so attached pictures are visible directly in chat.
+function chatImagesHtml(sources){
+  if (!sources || !sources.length) return "";
+  const seen = new Set();
+  const imgs = [];
+  for (const s of sources){
+    if (s.image_url && !seen.has(s.image_url)){ seen.add(s.image_url); imgs.push(s); }
+  }
+  if (!imgs.length) return "";
+  return `<div class="chat-imgs">` + imgs.map(s =>
+    `<img class="chat-img" src="${url(s.image_url)}?token=${encodeURIComponent(TOKEN)}"
+        title="คลิกเพื่อดูขนาดเต็ม" onclick="window.open(this.src,'_blank')" />`
+  ).join("") + `</div>`;
 }
 
 // ---- Lightweight Markdown renderer (tables + basic formatting) ----
@@ -560,10 +585,9 @@ function autoGrow(){
 }
 
 // ---- Input actions ----
-async function uploadImage(fileInputId, { entity_id, interaction_id, note, sensitivity, source_label }) {
-  const f = $(fileInputId).files[0];
+async function uploadImageFile(file, { entity_id, interaction_id, note, sensitivity, source_label }) {
   const fd = new FormData();
-  fd.append("file", f);
+  fd.append("file", file);
   if (entity_id) fd.append("entity_id", entity_id);
   if (interaction_id) fd.append("interaction_id", interaction_id);
   if (note) fd.append("note", note);
@@ -571,12 +595,15 @@ async function uploadImage(fileInputId, { entity_id, interaction_id, note, sensi
   if (source_label) fd.append("source_label", source_label);
   return api("/api/ingest/image", { method: "POST", body: fd });
 }
+async function uploadImage(fileInputId, opts) {
+  return uploadImageFile($(fileInputId).files[0], opts);
+}
 
 async function saveText() {
   const m = $("in-text-msg"); m.className = "msg";
   const text = $("in-text").value;
-  const hasImg = $("in-image").files[0];
-  if (!text.trim() && !hasImg) { m.className = "msg error"; m.textContent = "กรุณาพิมพ์ข้อความหรือแนบรูป"; return; }
+  const imgs = Array.from($("in-image").files || []);
+  if (!text.trim() && !imgs.length) { m.className = "msg error"; m.textContent = "กรุณาพิมพ์ข้อความหรือแนบรูป"; return; }
   const sens = parseInt($("in-sens").value);
   const eid = entityId("in-entity");
   if (!eid) { m.className = "msg error"; m.textContent = "กรุณาเลือกลูกค้า/พาร์ทเนอร์จากรายการก่อนบันทึก"; return; }
@@ -587,10 +614,18 @@ async function saveText() {
       const r = await jsonPost("/api/ingest/text", { text, entity_id: eid, sensitivity: sens, force_label: $("in-flag").value || null, event_date: $("in-date").value || null });
       parts.push(`ข้อความ ${r.stored_chunks} ส่วน`);
     }
-    if (hasImg) {
-      m.textContent = "🖼️ AI กำลังอ่านรูป...";
-      await uploadImage("in-image", { entity_id: eid, note: text, sensitivity: sens });
-      parts.push("รูป 1 ภาพ");
+    if (imgs.length) {
+      let okImg = 0;
+      const imgErrors = [];
+      for (let i = 0; i < imgs.length; i++) {
+        m.textContent = `🖼️ AI กำลังอ่านรูป... (${i + 1}/${imgs.length})`;
+        try {
+          await uploadImageFile(imgs[i], { entity_id: eid, note: text, sensitivity: sens });
+          okImg++;
+        } catch (e) { imgErrors.push(`${imgs[i].name}: ${e.message}`); }
+      }
+      parts.push(`รูป ${okImg}/${imgs.length} ภาพ`);
+      if (imgErrors.length) throw new Error("บางรูปอัปโหลดไม่สำเร็จ — " + imgErrors.join(" | "));
     }
     flashOk(m, "✅ บันทึกแล้ว (" + parts.join(", ") + ")");
     $("in-text").value = ""; $("in-image").value = "";
@@ -598,19 +633,32 @@ async function saveText() {
 }
 async function uploadFile() {
   const m = $("up-msg"); m.className="msg";
-  const f = $("up-file").files[0];
-  if (!f){ m.className="msg error"; m.textContent="กรุณาเลือกไฟล์ก่อน"; return; }
+  const files = Array.from($("up-file").files || []);
+  if (!files.length){ m.className="msg error"; m.textContent="กรุณาเลือกไฟล์ก่อน"; return; }
   const eid = entityId("up-entity");
   if (!eid){ m.className="msg error"; m.textContent="กรุณาเลือกลูกค้า/พาร์ทเนอร์จากรายการก่อนบันทึก"; return; }
-  m.textContent="กำลังอัปโหลดและประมวลผล...";
-  const fd = new FormData();
-  fd.append("file", f);
-  fd.append("entity_id", eid);
-  fd.append("sensitivity", $("up-sens").value);
-  try {
-    const r = await api("/api/ingest/file", { method:"POST", body: fd });
-    flashOk(m, `✅ ประมวลผลแล้ว (${r.stored_chunks} ส่วน จาก ${r.chars} อักขระ)`);
-  } catch(e){ m.className="msg error"; m.textContent="❌ "+e.message; }
+  const sens = $("up-sens").value;
+  let okCount = 0, totalChunks = 0;
+  const errors = [];
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    m.className = "msg";
+    m.textContent = `กำลังอัปโหลดและประมวลผล... (${i + 1}/${files.length}) ${f.name}`;
+    const fd = new FormData();
+    fd.append("file", f);
+    fd.append("entity_id", eid);
+    fd.append("sensitivity", sens);
+    try {
+      const r = await api("/api/ingest/file", { method:"POST", body: fd });
+      okCount++; totalChunks += (r.stored_chunks || 0);
+    } catch(e){ errors.push(`${f.name}: ${e.message}`); }
+  }
+  if (errors.length) {
+    m.className = "msg error";
+    m.textContent = `✅ สำเร็จ ${okCount}/${files.length} ไฟล์ · ❌ ${errors.join(" | ")}`;
+  } else {
+    flashOk(m, `✅ ประมวลผลแล้ว ${okCount} ไฟล์ (รวม ${totalChunks} ส่วน)`);
+  }
 }
 async function saveMeeting() {
   const m = $("mt-msg"); m.className="msg";
@@ -746,6 +794,7 @@ async function searchChunks() {
         <div class="mrow-head">
           <span class="badge ${c.fact_or_opinion}">${c.fact_or_opinion.toUpperCase()}</span>
           <span class="m">${esc2(c.entity_name||'-')} · ${esc2(c.source_label||'')} · ระดับ ${c.sensitivity}</span>
+          <span class="m reporter">👤 ผู้ report: ${esc2(c.reporter_name || c.reporter_username || 'ไม่ระบุ')}</span>
           ${c.flagged ? `<span class="flag-tag">🚩 ${esc2(c.flag_reason||'ถูกรายงาน')}</span>` : ''}
         </div>
         <textarea id="mtext-${c.id}" rows="2">${esc2(c.text)}</textarea>

@@ -1,0 +1,18 @@
+Chunks already present (47); skipping interaction/issue ingestion.
+Seed complete.
+INFO:     Started server process [638743]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:55778 - "GET / HTTP/1.1" 200 OK
+(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/Workshop/crm-assistant/backend/.venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+INFO:     127.0.0.1:55786 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55790 - "POST /api/chat HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:50964 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50968 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     49.237.35.1:0 - "POST /api/chat HTTP/1.1" 200 OK

@@ -538,11 +538,13 @@ def list_chunks(entity_id: Optional[int] = None, q: Optional[str] = None,
                 user: dict = Depends(require_input)):
     """List knowledge chunks the user may access, for review/correction."""
     from .auth import sql_access_filter
-    clause, params = sql_access_filter(user)
+    clause, params = sql_access_filter(user, "c")
     sql = (f"SELECT c.id,c.text,c.fact_or_opinion,c.fo_confidence,c.source_person,"
            f"c.source_label,c.sensitivity,c.department,c.flagged,c.flag_reason,"
-           f"c.entity_id,e.name AS entity_name "
-           f"FROM chunks c LEFT JOIN entities e ON e.id=c.entity_id WHERE {clause}")
+           f"c.entity_id,e.name AS entity_name,"
+           f"u.full_name AS reporter_name,u.username AS reporter_username "
+           f"FROM chunks c LEFT JOIN entities e ON e.id=c.entity_id "
+           f"LEFT JOIN users u ON u.id=c.created_by WHERE {clause}")
     if entity_id:
         sql += " AND c.entity_id=?"; params = params + [entity_id]
     if q:

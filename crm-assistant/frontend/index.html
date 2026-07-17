@@ -7,14 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="static/styles.css" />
+  <link rel="stylesheet" href="static/styles.css?v=20260717y" />
 </head>
 <body>
   <!-- Login -->
   <div id="login-view" class="login-wrap">
     <div class="login-card">
-      <div class="login-logo"><img src="static/Picture/Logo.png" alt="Whisper logo"></div>
-      <h1>Whisper</h1>
+      <div class="login-logo"><img src="static/Picture/Logoicon.png" alt="Whisper logo"><img src="static/Picture/Logo.png" alt="Whisper logo"></div>
+      
+      <h1></h1>
       <p class="sub">ทุกการพบปะ ไม่มีหายไป</p>
       <input id="login-user" placeholder="Username" autocomplete="username" />
       <input id="login-pass" type="password" placeholder="Password" autocomplete="current-password" />
@@ -27,14 +28,14 @@
   <!-- App -->
   <div id="app-view" class="hidden">
     <header>
-      <div class="brand"><span class="brand-logo"><img src="static/Picture/Logo.png" alt="Whisper logo"></span> Whisper</div>
+      <div class="brand"><span class="brand-logo"><img src="static/Picture/Logo.png" alt="Whisper logo"></span>  </div>
       <nav>
-        <button class="tab active" data-tab="chat">💬 ถาม-ตอบ</button>
-        <button class="tab" data-tab="input">📥 เพิ่มข้อมูล</button>
-        <button class="tab" data-tab="issues">⚠️ Issues</button>
-        <button class="tab" data-tab="entities">🏢 ลูกค้า/พาร์ทเนอร์</button>
-        <button class="tab input-guard" data-tab="manage">🛠️ จัดการ/แก้ข้อมูล</button>
-        <button class="tab admin-only hidden" data-tab="admin">👤 Users</button>
+        <button class="tab active" data-tab="chat"><span class="tico">💬</span> ถาม-ตอบ</button>
+        <button class="tab" data-tab="input"><span class="tico">📥</span> เพิ่มข้อมูล</button>
+        <button class="tab" data-tab="issues"><span class="tico">⚠️</span> Issues</button>
+        <button class="tab" data-tab="entities"><span class="tico">🏢</span> ลูกค้า/พาร์ทเนอร์</button>
+        <button class="tab input-guard" data-tab="manage"><span class="tico">🛠️</span> จัดการ/แก้ข้อมูล</button>
+        <button class="tab admin-only hidden" data-tab="admin"><span class="tico">👤</span> Users</button>
       </nav>
       <div class="user-box">
         <span id="who"></span>
@@ -78,8 +79,8 @@
         <div class="grid2">
           <div class="card data-card dc-note">
             <div class="dc-tag">1 · โน้ต / แชท</div>
-            <h3>📝 พิมพ์ข้อมูล (Chat / Notes)</h3>
-            <p class="card-desc">พิมพ์บันทึก/ข้อความสั้น ๆ ที่ได้จากลูกค้าหรือพาร์ทเนอร์เอง แนบรูปได้ · เหมาะกับข้อมูลที่พิมพ์ด้วยมือ</p>
+            <h3>พิมพ์ข้อมูล (Chat / Notes)</h3>
+            <p class="card-desc">พิมพ์บันทึก/ข้อความสั้น ๆ ที่ได้จากลูกค้าหรือพาร์ทเนอร์เองได้ แนบรูปได้</p>
             <div class="combo"><input id="in-entity" class="combo-input" autocomplete="off" placeholder="🔍 เลือกลูกค้า/พาร์ทเนอร์ (พิมพ์เพื่อค้นหา)" /><div class="combo-menu hidden"></div></div>
             <label>วันที่ <input id="in-date" type="date" /></label>
             <textarea id="in-text" rows="6" placeholder="พิมพ์บันทึก/ข้อมูลที่ได้จากลูกค้าหรือพาร์ทเนอร์..."></textarea>
@@ -90,18 +91,19 @@
               <select id="in-flag"><option value="">🤖 ให้ AI แยก Fact/Opinion อัตโนมัติ</option><option value="fact">✅ Fact (ข้อเท็จจริง)</option><option value="opinion">💭 Opinion (ความเห็น)</option></select>
             </label>
             <label>🖼️ แนบรูป (ถ้ามี — AI จะอ่าน/อธิบายรูปให้ค้นหาได้ และแสดงในแชท)
-              <input type="file" id="in-image" accept="image/png,image/jpeg,image/gif,image/webp" />
+              <input type="file" id="in-image" accept="image/png,image/jpeg,image/gif,image/webp" multiple />
             </label>
             <button id="in-text-btn">บันทึกข้อมูล</button>
             <div class="msg" id="in-text-msg"></div>
           </div>
 
+          <div class="dc-right">
           <div class="card data-card dc-file">
             <div class="dc-tag">2 · อัปโหลดไฟล์</div>
-            <h3>📎 อัปโหลดไฟล์ (Word / Excel / PPT / PDF / Minutes)</h3>
+            <h3>อัปโหลดไฟล์ (Word / Excel / PPT / PDF / Minutes)</h3>
             <p class="card-desc">อัปโหลดไฟล์เอกสาร เช่น Word, Excel, PowerPoint, PDF หรือรายงานการประชุม · ระบบจะดึงข้อความในไฟล์มาจัดเก็บให้อัตโนมัติ</p>
             <div class="combo"><input id="up-entity" class="combo-input" autocomplete="off" placeholder="🔍 เลือกลูกค้า/พาร์ทเนอร์ (พิมพ์เพื่อค้นหา)" /><div class="combo-menu hidden"></div></div>
-            <input type="file" id="up-file" accept=".docx,.xlsx,.pptx,.pdf,.txt,.md,.csv" />
+            <input type="file" id="up-file" accept=".docx,.xlsx,.pptx,.pdf,.txt,.md,.csv" multiple />
             <label>ระดับความลับ
               <select id="up-sens"><option value="1">1 - ปกติ</option><option value="2">2 - ลับ</option><option value="3">3 - ลับมาก</option></select>
             </label>
@@ -110,8 +112,8 @@
           </div>
 
           <div class="card data-card dc-issue">
-            <div class="dc-tag">4 · Issue</div>
-            <h3>⚠️ เพิ่ม Issue ที่ค้างอยู่</h3>
+            <div class="dc-tag">3 · Issue</div>
+            <h3>เพิ่ม Issue ที่ค้างอยู่</h3>
             <p class="card-desc">บันทึกปัญหา/ประเด็นที่ยังค้างอยู่ของลูกค้าหรือพาร์ทเนอร์ พร้อมระดับความสำคัญ เพื่อติดตามและตามแก้ภายหลัง</p>
             <div class="combo"><input id="is-entity" class="combo-input" autocomplete="off" placeholder="🔍 เลือกลูกค้า/พาร์ทเนอร์ (พิมพ์เพื่อค้นหา)" /><div class="combo-menu hidden"></div></div>
             <label>วันที่ <input id="is-date" type="date" /></label>
@@ -125,6 +127,7 @@
             </label>
             <button id="is-btn">บันทึก Issue</button>
             <div class="msg" id="is-msg"></div>
+          </div>
           </div>
         </div>
       </section>
@@ -197,7 +200,7 @@
           <div class="card">
             <h3>เพิ่มผู้ใช้ + สิทธิ์การเข้าถึง</h3>
             <input id="nu-user" placeholder="username" />
-            <input id="nu-pass" placeholder="password" />
+            <div class="pass-wrap"><input id="nu-pass" type="password" placeholder="password" autocomplete="new-password" /><button type="button" class="pass-eye" aria-label="แสดง/ซ่อนรหัสผ่าน" onclick="togglePass('nu-pass', this)">👁️</button></div>
             <input id="nu-name" placeholder="ชื่อเต็ม" />
             <label>Role <select id="nu-role"><option>viewer</option><option>manager</option><option>executive</option><option>admin</option></select></label>
             <label>กลุ่มลูกค้า / แผนกที่ผู้ใช้เข้าถึงได้
@@ -216,6 +219,6 @@
     </main>
   </div>
 
-  <script src="static/app.js"></script>
+  <script src="static/app.js?v=20260717z"></script>
 </body>
 </html>

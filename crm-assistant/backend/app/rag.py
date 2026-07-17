@@ -1,7 +1,7 @@
 """RAG: access-filtered retrieval + answer generation with Fact/Opinion citations."""
 import re
 import numpy as np
-from . import bedrock, config, setdata
+from . import bedrock, config, setdata, financial, phonebook
 from .db import db, loads_vec
 from .auth import sql_access_filter
 
@@ -173,6 +173,8 @@ CRITICAL RULES:
 8. If it is unclear WHICH company the user is asking about — for example a follow-up like
    "ขอดูงบการเงิน" or "ขอข้อมูลเพิ่ม" with no clear subject and no company in the conversation —
    ASK the user to specify the company. Do NOT pick one on your own.
+   EXCEPTION: if a "SELECTED COMPANY" is stated above, that IS the company in scope — answer
+   about that company directly and NEVER ask which company.
 9. Do NOT misattribute data: never present one company's records as if they belong to another
    company. When using INTERNAL context, attribute a fact to a company only if that context item
    is tagged with that company (entity=NAME)."""
@@ -204,6 +206,18 @@ def _is_financial_query(text):
     """Heuristic: does the question ask about financials / company performance?"""
     t = (text or "").lower()
     return any(k in t for k in _FIN_KEYWORDS)
+
+
+_CONTACT_KEYWORDS = [
+    "เบอร์", "โทร", "โทรศัพท์", "มือถือ", "ติดต่อ", "ผู้ติดต่อ", "อีเมล", "อีเมล์", "เมล",
+    "contact", "phone", "call", "email", "e-mail", "mobile", "reach",
+]
+
+
+def _is_contact_query(text):
+    """Heuristic: is the user asking for a contact / phone number / email?"""
+    t = (text or "").lower()
+    return any(k in t for k in _CONTACT_KEYWORDS)
 
 
 ANALYSIS_ADDON = """
@@ -301,8 +315,77 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
                          + set_res["text"])
             set_sources = set_res.get("sources", [])
 
-    user_msg = (f"CONTEXT:\n{context or '(no accessible internal data found)'}"
-                f"{issue_block}{set_block}\n\nQUESTION: {query}")
+    # --- Internal financial data (authoritative, from our own records) ---
+    # For financial questions, pull internal figures from the `financials` table for the
+    # relevant entity/entities and add them to the model context. RBAC (sensitivity +
+    # department) is enforced by financial.internal_financials via sql_access_filter.
+    # NOTE: intentionally NOT surfaced in any menu/UI — used only to answer questions.
+    internal_fin_block = ""
+    if _is_financial_query(f"{search_query} {query}"):
+        fin_ids = set(relevant_ids) if relevant_ids else set()
+        if effective_entity_id:
+            fin_ids.add(effective_entity_id)
+        fin_lines = []
+        for fid in fin_ids:
+            try:
+                rows = financial.internal_financials(user, fid)
+            except Exception:
+                rows = []
+            if not rows:
+                continue
+            with db() as conn:
+                nm = _entity_name(conn, fid) or ""
+            for r in rows:
+                fin_lines.append(
+                    f"- [{nm}] {r.get('period')}: revenue={r.get('revenue')} "
+                    f"net_profit={r.get('net_profit')} {r.get('currency', 'THB')} "
+                    f"(source={r.get('source') or 'internal'})")
+        if fin_lines:
+            internal_fin_block = ("\n\nINTERNAL FINANCIAL RECORDS (VERIFIED — our own internal "
+                                  "accounting data; authoritative, use these exact figures):\n"
+                                  + "\n".join(fin_lines))
+
+    # --- Corporate phonebook / contacts (internal directory) ---
+    # For contact/phone questions, pull the directory for the relevant entities and add to
+    # context. Backend-only — not exposed in any menu.
+    contact_block = ""
+    if _is_contact_query(f"{search_query} {query}"):
+        cids = set(relevant_ids) if relevant_ids else set()
+        if effective_entity_id:
+            cids.add(effective_entity_id)
+        try:
+            contacts = phonebook.contacts_for(cids)
+        except Exception:
+            contacts = []
+        if contacts:
+            lines = []
+            for c in contacts:
+                parts = [f"{c.get('person_name')}"]
+                if c.get("title"):
+                    parts.append(str(c["title"]))
+                who = " — ".join(parts)
+                extra = []
+                if c.get("phone"):
+                    extra.append(f"โทร {c['phone']}")
+                if c.get("email"):
+                    extra.append(f"อีเมล {c['email']}")
+                tail = (" · " + " · ".join(extra)) if extra else ""
+                lines.append(f"- [{c.get('entity_name')}] {who}{tail}")
+            contact_block = ("\n\nCOMPANY PHONEBOOK / CONTACTS (internal directory of contacts at "
+                             "the relevant company/companies — names, titles, phone, email):\n"
+                             + "\n".join(lines))
+
+    scope_line = ""
+    if effective_entity_id:
+        with db() as conn:
+            _scope_nm = _entity_name(conn, effective_entity_id)
+        if _scope_nm:
+            scope_line = ("SELECTED COMPANY (the user has explicitly scoped this question to this "
+                          "company via the UI — answer about THIS company and do NOT ask which "
+                          f"company): {_scope_nm}\n\n")
+
+    user_msg = (f"{scope_line}CONTEXT:\n{context or '(no accessible internal data found)'}"
+                f"{issue_block}{set_block}{internal_fin_block}{contact_block}\n\nQUESTION: {query}")
     messages = []
     for h in (history or [])[-6:]:
         messages.append({"role": h["role"], "text": h["text"]})
@@ -317,7 +400,7 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
 
     system = CHAT_SYSTEM + (SET_ADDON if set_block else "") + (ANALYSIS_ADDON if is_analysis else "")
     text = bedrock.chat(system, messages,
-                        max_tokens=1600 if is_analysis else 1200,
+                        max_tokens=2400 if is_analysis else 1800,
                         temperature=0.4 if is_analysis else 0.2,
                         model_id=model_id)
 

@@ -71,12 +71,12 @@ button{font-family:inherit}
 
 /* ---------------- Header ---------------- */
 header{display:flex;align-items:center;gap:18px;background:rgba(255,255,255,.75);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--line);padding:0 22px;height:62px;position:sticky;top:0;z-index:20}
+  border-bottom:1px solid var(--line);padding:10px 22px;min-height:96px;flex-wrap:nowrap;row-gap:8px;position:sticky;top:0;z-index:20}
 .brand{font-weight:800;font-size:18px;letter-spacing:-.4px;display:flex;align-items:center;gap:9px;
   background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .brand-logo{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
   font-size:16px;background:var(--grad);box-shadow:0 4px 12px rgba(230,81,0,.35);-webkit-text-fill-color:initial}
-nav{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+nav{display:flex;gap:8px;flex:1;flex-wrap:wrap}
 .tab{background:none;border:0;padding:9px 15px;border-radius:11px;cursor:pointer;font-size:14px;font-weight:500;
   color:var(--muted);transition:background .15s,color .15s;font-family:inherit}
 .tab:hover{background:var(--soft);color:var(--text)}
@@ -111,7 +111,7 @@ main{max-width:1140px;margin:0 auto;padding:24px 22px 40px}
 .msg.error{color:var(--danger)}
 
 /* ---------------- Chat (ChatGPT/Claude style) ---------------- */
-.chat-shell{display:flex;height:calc(100vh - 110px);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;
+.chat-shell{display:flex;height:calc(100vh - 144px);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;
   background:var(--surface);box-shadow:var(--shadow)}
 .chat-sidebar{width:260px;flex-shrink:0;background:linear-gradient(180deg,#fbfbfe,#f4f5fb);border-right:1px solid var(--line);
   display:flex;flex-direction:column;padding:12px}
@@ -426,7 +426,7 @@ button{-webkit-text-fill-color:currentColor}
   box-shadow:0 6px 16px rgba(245,124,0,.32) !important;
 }
 
-/* แบรนด์ส่วนหัว: โลโก้ 🧭 + ชื่อแอป "CRM Assistant" ให้เป็นสีส้มชัดเจน */
+/* แบรนด์ส่วนหัว: โลโก้  + ชื่อแอปให้เป็นสีส้มชัดเจน */
 .brand{
   background:none !important;
   -webkit-background-clip:border-box !important;
@@ -435,22 +435,22 @@ button{-webkit-text-fill-color:currentColor}
   -webkit-text-fill-color:#e65100 !important;
 }
 .brand-logo{
-  width:36px !important;height:36px !important;border-radius:0 !important;
+  width:auto !important;height:64px !important;border-radius:0 !important;
   background:none !important;
   background-image:none !important;
   color:#fff !important;
   box-shadow:none !important;
-  overflow:hidden;
+  overflow:visible;
 }
-.brand-logo img{width:100%;height:100%;object-fit:contain;display:block}
+.brand-logo img{height:100%;width:auto;object-fit:contain;display:block;transform:none}
 
 /* การ์ด "เพิ่มลูกค้า / พาร์ทเนอร์" (.input-guard): พื้นเทาอ่อน แยกจากการ์ดขาวรอบๆ ไม่ให้กลืนกัน */
-.input-guard{
+.card.input-guard{
   background:#eceff5;
   border:1px solid #d6dce8;
   box-shadow:0 4px 16px rgba(16,23,41,.06);
 }
-.input-guard input,.input-guard textarea,.input-guard select{background:#fff}
+.card.input-guard input,.card.input-guard textarea,.card.input-guard select{background:#fff}
 
 /* แท็บผู้ดูแล (#tab-admin): การ์ดพื้นเทาอ่อน ไม่ให้กลืนกับพื้น — ช่องกรอก/รายการยังเป็นขาวให้ตัดกันชัด */
 #tab-admin .card{background:#eceff5;border:1px solid #d6dce8}
@@ -461,11 +461,86 @@ button{-webkit-text-fill-color:currentColor}
 .entity-list-card,.entity-detail-card{background:#eceff5;border:1px solid #d6dce8}
 .entity-list-card .item{background:#fff}
 
-/* จอกว้าง: ให้การ์ด Issue อยู่คอลัมน์ขวา (ใต้การ์ดอัปโหลดไฟล์) */
+/* คอลัมน์ขวาของหน้าเพิ่มข้อมูล: ไฟล์อัปโหลด (บน) + Issue (ล่าง) แบ่งครึ่งเท่ากัน สูงรวม = การ์ดโน้ตด้านซ้าย */
+.dc-right{display:flex;flex-direction:column;gap:18px}
 @media(min-width:861px){
-  .dc-issue{grid-column:2}
+  .dc-right .data-card{min-height:0}
+  .dc-right .dc-file{flex:1}
+  .dc-right .dc-issue{flex:1.7}
 }
 
 /* โลโก้หน้า Login: ใช้รูปโลโก้ พื้นโปร่งใส ไม่มีกรอบ/เงา */
-.login-logo{background:none !important;box-shadow:none !important;border-radius:0 !important;overflow:hidden}
-.login-logo img{width:100%;height:100%;object-fit:contain;display:block}
+.login-logo{width:auto !important;height:auto !important;margin:0 auto 18px !important;
+  display:flex !important;flex-direction:column;align-items:center;gap:12px;
+  background:none !important;box-shadow:none !important;border-radius:0 !important;overflow:visible !important}
+.login-logo img{display:block;object-fit:contain;max-width:100%}
+.login-logo img:first-child{height:84px;width:auto}   /* Logoicon (ด้านบน) */
+.login-logo img:last-child{width:220px;height:auto}   /* Logo แบนเนอร์ (ด้านล่าง) */
+
+/* Login card: พื้นหลังสีขาวทึบ + ช่องกรอก (username/password) ขอบสีส้มให้มองเห็นชัด */
+.login-card{background:#fff !important;backdrop-filter:none !important;border:1px solid #eceff5 !important}
+.login-card input{border:2px solid #f57c00 !important;background:#fff !important}
+.login-card input:focus{border-color:#e65100 !important;box-shadow:0 0 0 4px rgba(245,124,0,.18) !important}
+
+/* หน้า Login: เพิ่มขนาดตัวอักษรให้ใหญ่/อ่านง่ายขึ้น */
+.login-card h1{font-size:44px !important}
+.login-card .sub{font-size:17px !important}
+.login-card input{font-size:18px !important;padding:15px 16px !important}
+.login-card input::placeholder{font-size:17px}
+.login-card button{font-size:18px !important;padding:15px !important}
+
+/* ไอคอน emoji บนแท็บ: ทำให้เป็นสีเดียวกับตัวอักษร (ใช้เทคนิค text-shadow เพราะ color ปกติเปลี่ยนสี emoji ไม่ได้) */
+.tico{
+  color:transparent;
+  text-shadow:0 0 0 #42506b;   /* สีเดียวกับ .tab text */
+  margin-right:2px;
+}
+.tab.active .tico{text-shadow:0 0 0 var(--primary-d)}   /* แท็บที่เลือกอยู่: ตามสีส้มของ text */
+.tab:hover .tico{text-shadow:0 0 0 var(--text)}
+
+/* แท็บเมนู: อยู่แถวเดียวเสมอ ไม่ห่อบรรทัด ไม่หดตัว น้ำหนักตัวอักษรคงที่ (600)
+   ความกว้างขั้นต่ำของแอปถูกตรึงไว้ (#app-view) ถ้าจอแคบกว่าจะเลื่อน scrollbar ทั้งหน้าแทน */
+nav{flex-wrap:nowrap !important}
+nav .tab{font-weight:600 !important;white-space:nowrap;flex-shrink:0}
+
+/* ตรึงความกว้างขั้นต่ำของทั้งแอป: จอแคบกว่านี้จะมี scrollbar แนวนอนให้เลื่อน แทนที่ปุ่ม/เลย์เอาต์จะขยับ */
+#app-view{min-width:1120px}
+
+/* avatar (หน้า bot ในแชท) และโลโก้หน้าแชทว่าง: ใช้ไอคอนโลโก้ พื้นโปร่งใส (ไอคอนมีสีในตัว) */
+.avatar,.ce-logo{background:none !important;background-color:transparent !important;box-shadow:none !important;overflow:hidden}
+.avatar{width:44px !important;height:44px !important}
+.avatar img,.ce-logo img{width:100%;height:100%;object-fit:contain;display:block;transform:scale(1.7)}
+
+/* หน้าเพิ่มข้อมูล: ป้าย "วันที่ / ระดับความลับ / ความสำคัญ" อยู่บรรทัดเดียวกับช่องกรอก */
+.data-card label:has(> input[type="date"]),
+.data-card label:has(> #in-sens),
+.data-card label:has(> #up-sens),
+.data-card label:has(> #is-sens),
+.data-card label:has(> #is-pri){
+  display:flex;align-items:center;gap:10px;flex-wrap:nowrap;
+}
+.data-card label:has(> input[type="date"]) > input,
+.data-card label:has(> #in-sens) > select,
+.data-card label:has(> #up-sens) > select,
+.data-card label:has(> #is-sens) > select,
+.data-card label:has(> #is-pri) > select{
+  width:auto;flex:1;min-width:0;margin-bottom:0;
+}
+
+/* รูปภาพที่แนบ แสดงในแชทโดยตรง (ไม่ต้องเปิดแผงแหล่งข้อมูล) */
+.chat-imgs{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 4px}
+.chat-img{max-width:220px;max-height:200px;border-radius:12px;border:1px solid var(--line);
+  cursor:pointer;object-fit:cover;box-shadow:var(--shadow-sm);transition:transform .12s}
+.chat-img:hover{transform:scale(1.02)}
+
+/* ช่องรหัสผ่าน + ปุ่มรูปตา (สลับดู/ซ่อน) — หน้าสร้างผู้ใช้ */
+.pass-wrap{position:relative;margin-bottom:11px}
+.pass-wrap input{margin-bottom:0 !important;padding-right:44px !important}
+/* .pass-wrap .pass-eye (2 คลาส) มี specificity สูงกว่า .card button จึงทับสไตล์ปุ่มส้มได้ */
+.pass-wrap .pass-eye{
+  position:absolute !important;right:6px;top:50%;transform:translateY(-50%);
+  background:none !important;background-color:transparent !important;background-image:none !important;
+  border:0 !important;box-shadow:none !important;margin:0 !important;padding:4px 6px !important;
+  width:auto !important;min-width:0 !important;font-size:18px;line-height:1;cursor:pointer;
+  color:inherit !important;-webkit-text-fill-color:initial !important;opacity:.75}
+.pass-wrap .pass-eye:hover{opacity:1;transform:translateY(-50%)}
