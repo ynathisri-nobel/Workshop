@@ -55,7 +55,7 @@ button{font-family:inherit}
   width:400px;max-width:100%;box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.6);text-align:center}
 .login-logo{width:64px;height:64px;margin:0 auto 14px;border-radius:20px;display:flex;align-items:center;
   justify-content:center;font-size:32px;background:var(--grad);box-shadow:0 10px 24px rgba(230,81,0,.4)}
-.login-card h1{font-size:30px;margin:0 0 4px;font-weight:800;letter-spacing:-.5px;
+.login-card h1{font-size:36px;margin:0 0 4px;font-weight:800;letter-spacing:-.5px;
   background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .login-card .sub{color:var(--muted);margin:0 0 26px;font-size:14px}
 .login-card input{width:100%;padding:13px 15px;margin-bottom:12px;border:1px solid var(--line);border-radius:12px;
@@ -327,24 +327,17 @@ button{-webkit-text-fill-color:currentColor}
 .data-card{
   position:relative;
   padding:20px 20px 22px;
-  border:1.5px solid var(--dc-border,#e5e8f0);
-  border-top:5px solid var(--dc,#6366f1);
+  border:0;
   border-radius:16px;
   background:
     radial-gradient(120% 90% at 100% 0%,var(--dc-bg,#f7f8fc) 0%,transparent 42%),
     linear-gradient(180deg,var(--dc-bg2,#fff) 0%,#ffffff 55%);
   box-shadow:0 4px 16px rgba(16,23,41,.06);
-  transition:box-shadow .2s,transform .2s,border-color .2s;
+  transition:box-shadow .2s,transform .2s;
 }
 .data-card:hover{
-  border-color:var(--dc,#6366f1);
   box-shadow:0 14px 34px rgba(16,23,41,.13);
   transform:translateY(-3px);
-}
-/* แถบสีประจำการ์ดด้านซ้าย เพื่อแยกแต่ละใบให้ชัดขึ้น */
-.data-card::before{
-  content:"";position:absolute;left:0;top:-5px;bottom:0;width:5px;
-  background:var(--dc,#6366f1);border-radius:16px 0 0 16px;opacity:.9;
 }
 .dc-note{--dc:#6366f1;--dc-bg:#eef0ff;--dc-bg2:#fafbff;--dc-border:#cfd4f7}
 .dc-file{--dc:#0891b2;--dc-bg:#e2f6fb;--dc-bg2:#f4fcfe;--dc-border:#a8e0ec}
@@ -355,8 +348,7 @@ button{-webkit-text-fill-color:currentColor}
   box-shadow:0 4px 10px rgba(16,23,41,.16)}
 .data-card h3{margin:0 0 8px}
 .card-desc{margin:0 0 16px;font-size:12.8px;color:#4a5568;line-height:1.65;
-  background:rgba(255,255,255,.72);border:1px solid var(--dc-border,#e5e8f0);border-left:3px solid var(--dc,#6366f1);
-  padding:10px 13px;border-radius:0 10px 10px 0}
+  background:none;border:0;padding:0 0 2px;border-radius:0}
 
 /* ---- ช่องแชต / แถบเครื่องมือ ให้ชัดขึ้น ---- */
 .toolbar-label{font-size:12.5px;font-weight:700;color:#42506b;white-space:nowrap}
@@ -468,3 +460,12 @@ button{-webkit-text-fill-color:currentColor}
 /* การ์ด "รายชื่อ" (.entity-list-card): พื้นเทาอ่อน ไม่ให้กลืนกับพื้น — รายการภายในยังเป็นขาวให้ตัดกันชัด */
 .entity-list-card,.entity-detail-card{background:#eceff5;border:1px solid #d6dce8}
 .entity-list-card .item{background:#fff}
+
+/* จอกว้าง: ให้การ์ด Issue อยู่คอลัมน์ขวา (ใต้การ์ดอัปโหลดไฟล์) */
+@media(min-width:861px){
+  .dc-issue{grid-column:2}
+}
+
+/* โลโก้หน้า Login: ใช้รูปโลโก้ พื้นโปร่งใส ไม่มีกรอบ/เงา */
+.login-logo{background:none !important;box-shadow:none !important;border-radius:0 !important;overflow:hidden}
+.login-logo img{width:100%;height:100%;object-fit:contain;display:block}

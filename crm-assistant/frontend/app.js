@@ -814,7 +814,6 @@ $("chat-text").addEventListener("input", autoGrow);
 $("chat-text").addEventListener("keydown", e => { if (e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendChat(); }});
 $("in-text-btn").onclick = saveText;
 $("up-btn").onclick = uploadFile;
-$("mt-btn").onclick = saveMeeting;
 $("is-btn").onclick = saveIssue;
 $("nu-btn").onclick = createUser;
 $("ne-btn").onclick = createEntity;

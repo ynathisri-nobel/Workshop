@@ -13,9 +13,9 @@
   <!-- Login -->
   <div id="login-view" class="login-wrap">
     <div class="login-card">
-      <div class="login-logo">🧭</div>
-      <h1>CRM Knowledge Assistant</h1>
-      <p class="sub">ผู้ช่วยข้อมูลลูกค้า &amp; พาร์ทเนอร์ สำหรับผู้บริหาร</p>
+      <div class="login-logo"><img src="static/Picture/Logo.png" alt="Whisper logo"></div>
+      <h1>Whisper</h1>
+      <p class="sub">ทุกการพบปะ ไม่มีหายไป</p>
       <input id="login-user" placeholder="Username" autocomplete="username" />
       <input id="login-pass" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="login-btn">เข้าสู่ระบบ</button>
@@ -107,25 +107,6 @@
             </label>
             <button id="up-btn">อัปโหลด &amp; ประมวลผล</button>
             <div class="msg" id="up-msg"></div>
-          </div>
-
-          <div class="card data-card dc-meet">
-            <div class="dc-tag">3 · การประชุม</div>
-            <h3>🗓️ บันทึกการประชุม/พบลูกค้า</h3>
-            <p class="card-desc">บันทึกรายละเอียดการประชุมหรือการพบลูกค้า/พาร์ทเนอร์ พร้อมวันที่ ผู้เข้าร่วมทั้งสองฝ่าย และสรุปสิ่งที่คุยกัน · แนบรูปได้</p>
-            <div class="combo"><input id="mt-entity" class="combo-input" autocomplete="off" placeholder="🔍 เลือกลูกค้า/พาร์ทเนอร์ (พิมพ์เพื่อค้นหา)" /><div class="combo-menu hidden"></div></div>
-            <input id="mt-date" type="date" />
-            <input id="mt-ours" placeholder="ผู้เข้าร่วมฝั่งเรา" />
-            <input id="mt-theirs" placeholder="ผู้เข้าร่วมฝั่งลูกค้า/พาร์ทเนอร์" />
-            <textarea id="mt-summary" rows="4" placeholder="สรุปการประชุม / สิ่งที่คุยกัน"></textarea>
-            <label>ระดับความลับ
-              <select id="mt-sens"><option value="1">1 - ปกติ</option><option value="2">2 - ลับ</option><option value="3">3 - ลับมาก</option></select>
-            </label>
-            <label>🖼️ แนบรูป (ถ้ามี — เช่น ภาพไวท์บอร์ด/สไลด์/นามบัตร)
-              <input type="file" id="mt-image" accept="image/png,image/jpeg,image/gif,image/webp" />
-            </label>
-            <button id="mt-btn">บันทึกการประชุม</button>
-            <div class="msg" id="mt-msg"></div>
           </div>
 
           <div class="card data-card dc-issue">
