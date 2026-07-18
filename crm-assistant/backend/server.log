@@ -1,18 +1,156 @@
-Chunks already present (47); skipping interaction/issue ingestion.
+Chunks already present (46); skipping interaction/issue ingestion.
 Seed complete.
-INFO:     Started server process [638743]
+INFO:     Started server process [763097]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:55778 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44242 - "GET / HTTP/1.1" 200 OK
 (trapped) error reading bcrypt version
 Traceback (most recent call last):
   File "/Workshop/crm-assistant/backend/.venv/lib/python3.12/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
     version = _bcrypt.__about__.__version__
               ^^^^^^^^^^^^^^^^^
 AttributeError: module 'bcrypt' has no attribute '__about__'
-INFO:     127.0.0.1:55786 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55790 - "POST /api/chat HTTP/1.1" 422 Unprocessable Entity
-INFO:     127.0.0.1:50964 - "POST /api/auth/login HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50968 - "POST /api/chat HTTP/1.1" 200 OK
-INFO:     49.237.35.1:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44256 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44264 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59694 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET / HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/styles.css?v=20260717y HTTP/1.1" 304 Not Modified
+INFO:     223.24.186.36:0 - "GET /static/app.js?v=20260718f HTTP/1.1" 304 Not Modified
+INFO:     223.24.186.36:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/financial/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/financial/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET / HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/styles.css?v=20260717y HTTP/1.1" 304 Not Modified
+INFO:     223.24.186.36:0 - "GET /static/app.js?v=20260718g HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities/3 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/financial/3 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET / HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/styles.css?v=20260717y HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/Picture/Logo.png HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/Picture/Logoicon.png HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/app.js?v=20260718g HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/image/51?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImRlcGFydG1lbnQiOiJhbGwiLCJhbGxvd2VkX3NlbnNpdGl2aXR5IjozLCJjYW5faW5wdXQiOjEsImlhdCI6MTc4NDMzNTUxMywiZXhwIjoxNzg0MzY0MzEzfQ.7xK0bbD7o9MPkJOupGeMM0c-mv22NAASDZn0Dx7V-K8 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities/3 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/financial/3 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET / HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/styles.css?v=20260717y HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/Picture/Logoicon.png HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/app.js?v=20260718g HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /static/Picture/Logo.png HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/image/51?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImRlcGFydG1lbnQiOiJhbGwiLCJhbGxvd2VkX3NlbnNpdGl2aXR5IjozLCJjYW5faW5wdXQiOjEsImlhdCI6MTc4NDMzNTUxMywiZXhwIjoxNzg0MzY0MzEzfQ.7xK0bbD7o9MPkJOupGeMM0c-mv22NAASDZn0Dx7V-K8 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/image/51?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImRlcGFydG1lbnQiOiJhbGwiLCJhbGxvd2VkX3NlbnNpdGl2aXR5IjozLCJjYW5faW5wdXQiOjEsImlhdCI6MTc4NDM0MDM0NSwiZXhwIjoxNzg0MzY5MTQ1fQ.1UE1RVEdAjm9VLErWbq4iYyu5iLsR-2YFM_DS0c-9o8 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chat HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/image/51?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImRlcGFydG1lbnQiOiJhbGwiLCJhbGxvd2VkX3NlbnNpdGl2aXR5IjozLCJjYW5faW5wdXQiOjEsImlhdCI6MTc4NDM0MDQ5MiwiZXhwIjoxNzg0MzY5MjkyfQ.ZMHUNxwDxhjgaf2IYKNOTHX5Wi0QuOCzhIAFN-9wQZs HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/ingest/text HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/issues/8/resolve HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/ingest/text HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chunks/17/flag HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "PUT /api/chunks/17 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks?entity_id=2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "PUT /api/chunks/17 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks?entity_id=2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/image/51?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImRlcGFydG1lbnQiOiJhbGwiLCJhbGxvd2VkX3NlbnNpdGl2aXR5IjozLCJjYW5faW5wdXQiOjEsImlhdCI6MTc4NDM0MTAyNywiZXhwIjoxNzg0MzY5ODI3fQ.CroAjhz3MzeMHh_Fo-PPz5AXoUu4kPm009TJPFx_PQk HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chunks/17/flag HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/ingest/text HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/issues HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/issues/13/resolve HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=resolved HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/financial/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks?entity_id=2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "PUT /api/chunks/17 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/admin/users HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks?entity_id=2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks?entity_id=2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "PUT /api/chunks/17 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=resolved HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/image/51?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJhZG1pbiIsImRlcGFydG1lbnQiOiJhbGwiLCJhbGxvd2VkX3NlbnNpdGl2aXR5IjozLCJjYW5faW5wdXQiOjEsImlhdCI6MTc4NDM0MTU1MywiZXhwIjoxNzg0MzcwMzUzfQ.iojmi5jzK-pllSgWcunw7h8wk_gBgbfGjjbnPbjbdXk HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/ingest/text HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/issues HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=resolved HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=resolved HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/issues/14/resolve HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=resolved HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/issues?status=open HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/financial/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/entities/2/aliases HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/entities/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/financial/2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks?entity_id=2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chunks/17/flag HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks?entity_id=2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "PUT /api/chunks/17 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "POST /api/chunks/17/unflag HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/chunks?entity_id=2 HTTP/1.1" 200 OK
+INFO:     223.24.186.36:0 - "GET /api/admin/users HTTP/1.1" 200 OK

@@ -314,6 +314,15 @@ async function showEntity(id) {
           </select>
           <button onclick="addAlias(${e.id})">➕ เพิ่ม</button>
         </div>
+        <div class="ee-row">
+          <select id="et-type-${e.id}">
+            <option value="customer" ${e.type==='customer'?'selected':''}>ลูกค้า</option>
+            <option value="partner" ${e.type==='partner'?'selected':''}>พาร์ทเนอร์</option>
+          </select>
+          <input id="et-industry-${e.id}" placeholder="อุตสาหกรรม" value="${esc2(e.industry||'')}" />
+          <input id="et-reg-${e.id}" placeholder="เลขนิติบุคคล (ถ้ามี)" value="${esc2(e.registration_no||'')}" />
+          <button onclick="saveEntityInfo(${e.id})">💾 บันทึกข้อมูล</button>
+        </div>
       </div>`:""}
     </div>`;
 
@@ -324,14 +333,49 @@ async function showEntity(id) {
     fin = `<h4>💰 ข้อมูลการเงิน</h4><ul>${inRows||"<li>ไม่มีสิทธิ์เข้าถึงหรือไม่มีข้อมูลภายใน</li>"}</ul>
            <div class="m">🌐 ${f.external?.note||""}</div>`;
   } catch {}
+  const historyBox = editable
+    ? `<h4>📋 ประวัติ / ข้อมูลบริษัท</h4>
+       <textarea id="ent-notes-${e.id}" rows="4" placeholder="บันทึกประวัติ/ภูมิหลัง/ข้อมูลสำคัญของลูกค้า-พาร์ทเนอร์...">${esc2(e.notes||"")}</textarea>
+       <button onclick="saveEntityNotes(${e.id})">💾 บันทึกประวัติ</button>
+       <div class="msg" id="ent-notes-msg-${e.id}"></div>`
+    : (e.notes ? `<h4>📋 ประวัติ / ข้อมูลบริษัท</h4><div>${esc2(e.notes)}</div>` : "");
   $("entity-detail").innerHTML = `
     <div class="t" style="font-size:16px">${esc2(e.name)}</div>
     <div class="m">${e.type} · ${esc2(e.industry||"-")}</div>
     ${identityBox}
+    ${historyBox}
     <h4>ผู้ติดต่อ</h4><ul>${d.contacts.map(c=>`<li>${esc2(c.person_name)} — ${esc2(c.title||"")}</li>`).join("")||"<li>-</li>"}</ul>
     <h4>ประวัติการประชุม</h4>${d.interactions.map(i=>`<div class="item"><div class="t">${esc2(fmtDate(i.meeting_date))}</div><div class="m">ฝ่ายเรา: ${esc2(i.our_attendees||"-")} | ฝ่ายเขา: ${esc2(i.their_attendees||"-")}</div><div>${esc2(i.summary||"")}</div></div>`).join("")||"<div class='m'>-</div>"}
     <h4>Issues</h4>${d.issues.map(i=>`<div class="item"><span class="pill ${i.priority}">${i.priority}</span> ${esc2(i.title)} <span class="m">(${i.status})</span></div>`).join("")||"<div class='m'>-</div>"}
     ${fin}`;
+}
+
+async function saveEntityInfo(id) {
+  const type = $("et-type-" + id) ? $("et-type-" + id).value : undefined;
+  const industry = $("et-industry-" + id) ? $("et-industry-" + id).value : undefined;
+  const reg = $("et-reg-" + id) ? $("et-reg-" + id).value : undefined;
+  if (!confirm("ยืนยันบันทึกข้อมูลบริษัท (ประเภท / อุตสาหกรรม / เลขนิติบุคคล)?")) return;
+  try {
+    await api("/api/entities/" + id, { method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, industry, registration_no: reg }) });
+    await loadEntities();
+    showEntity(id);
+  } catch (e) { alert("ไม่สำเร็จ: " + e.message); }
+}
+
+async function saveEntityNotes(id) {
+  const el = $("ent-notes-" + id); if (!el) return;
+  const msg = $("ent-notes-msg-" + id);
+  if (msg) { msg.className = "msg"; msg.textContent = "กำลังบันทึก..."; }
+  try {
+    await api("/api/entities/" + id, { method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes: el.value }) });
+    if (msg) { msg.className = "msg"; msg.textContent = "✅ บันทึกประวัติแล้ว"; }
+  } catch (e) {
+    if (msg) { msg.className = "msg error"; msg.textContent = "❌ " + e.message; }
+  }
 }
 
 async function renameEntity(id) {
@@ -427,13 +471,78 @@ function sourcesHtml(sources){
 function bubbleHtml(m){
   if (m.role === "user")
     return `<div class="bubble user"><div class="body">${esc(m.text)}</div></div>`;
-  const body = `<div class="md">${renderMarkdown(m.text)}</div>` + chatImagesHtml(m.sources) + sourcesHtml(m.sources);
+  const { text, charts } = extractCharts(m.text);
+  const body = `<div class="md">${renderMarkdown(text)}</div>` + chartsHtml(charts)
+             + chatImagesHtml(m.sources, m.inline_images) + sourcesHtml(m.sources);
   return `<div class="bubble bot"><div class="avatar">${BOT_FACE}</div><div class="body">${body}</div></div>`;
+}
+
+// ---- Chart support: the model may emit a chart as a fenced JSON block ----
+// Tolerant: matches ```chart, ```json or a bare ``` fence whose body is JSON that
+// looks like a chart spec (has "datasets" or "labels"). Other code blocks stay as text.
+function extractCharts(text){
+  const charts = [];
+  const cleaned = (text || "").replace(/```[a-zA-Z0-9]*\s*([\s\S]*?)```/g, (whole, body) => {
+    const t = body.trim();
+    if (!(t.startsWith("{") && (t.includes('"datasets"') || t.includes('"labels"')))) return whole;
+    try {
+      const spec = JSON.parse(t);
+      if (spec && (spec.datasets || spec.labels)) { charts.push(spec); return ""; }
+    } catch (e) { /* truncated/invalid — leave as text */ }
+    return whole;
+  });
+  return { text: cleaned, charts };
+}
+function chartsHtml(charts){
+  if (!charts || !charts.length) return "";
+  return charts.map(spec => {
+    const payload = encodeURIComponent(JSON.stringify(spec));
+    return `<div class="chat-chart-wrap"><canvas class="chat-chart" data-chart="${payload}"></canvas></div>`;
+  }).join("");
+}
+const CHART_COLORS = ["#f57c00","#1e88e5","#43a047","#e5484d","#8e24aa","#00897b","#fb8c00","#3949ab"];
+function initCharts(container){
+  if (typeof Chart === "undefined" || !container) return;
+  container.querySelectorAll("canvas.chat-chart:not([data-done])").forEach(cv => {
+    cv.setAttribute("data-done", "1");
+    let spec;
+    try { spec = JSON.parse(decodeURIComponent(cv.getAttribute("data-chart"))); }
+    catch (e) { return; }
+    const type = spec.type || "bar";
+    const isPie = (type === "pie" || type === "doughnut");
+    const datasets = (spec.datasets || []).map((ds, di) => {
+      const base = { label: ds.label || "", data: ds.data || [] };
+      if (isPie) {
+        base.backgroundColor = (ds.data || []).map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+      } else {
+        const col = CHART_COLORS[di % CHART_COLORS.length];
+        base.backgroundColor = (type === "line") ? col + "33" : col;
+        base.borderColor = col; base.borderWidth = 2;
+        if (type === "line") base.tension = 0.3;
+      }
+      return base;
+    });
+    try {
+      new Chart(cv.getContext("2d"), {
+        type,
+        data: { labels: spec.labels || [], datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            title: { display: !!spec.title, text: spec.title || "" },
+            legend: { display: isPie || datasets.length > 1 }
+          }
+        }
+      });
+    } catch (e) { /* ignore render errors */ }
+  });
 }
 
 // Show any images from cited sources inline in the answer (not hidden inside the
 // collapsed sources panel), so attached pictures are visible directly in chat.
-function chatImagesHtml(sources){
+// Skipped for structured queries (financials/contacts) where images are irrelevant.
+function chatImagesHtml(sources, allow){
+  if (allow === false) return "";
   if (!sources || !sources.length) return "";
   const seen = new Set();
   const imgs = [];
@@ -537,11 +646,12 @@ function renderChat(){
     log.innerHTML = `<div class="chat-empty">
       <div class="ce-logo">${BOT_FACE}</div>
       <h2>ถามข้อมูลเกี่ยวกับลูกค้า &amp; พาร์ทเนอร์ของคุณ</h2>
-      <p class="m">เช่น "สรุป Issues ที่ค้างของ SCG พร้อมแนวทางแก้ไข" · "Bangkok Bank เคยคุยอะไรไว้บ้าง?"</p>
+      <p class="m">เช่น "เคยเจอบริษัท Whisper เมื่อไหร่, เคยคุยอะไรกันไว้บ้าง"</p>
     </div>`;
     return;
   }
   log.innerHTML = CUR.messages.map(bubbleHtml).join("");
+  initCharts(log);
   log.scrollTop = log.scrollHeight;
 }
 
@@ -570,7 +680,7 @@ async function sendChat() {
     const entity_id = entityId("chat-entity");
     const history = CUR.messages.slice(0, -1).slice(-12).map(m => ({ role: m.role, text: m.text }));
     const res = await jsonPost("/api/chat", { query: q, entity_id, history, model: "haiku" });
-    CUR.messages.push({ role: "assistant", text: res.answer, sources: res.sources });
+    CUR.messages.push({ role: "assistant", text: res.answer, sources: res.sources, inline_images: res.inline_images });
     touchConv();
     renderChat();
   } catch (e) {
@@ -813,6 +923,7 @@ async function searchChunks() {
 }
 
 async function saveChunk(id) {
+  if (!confirm("ยืนยันบันทึกการแก้ไขเนื้อหานี้?\nระบบจะใช้เนื้อหาที่แก้ในการตอบทันที")) return;
   try {
     await api(`/api/chunks/${id}`, { method: "PUT",
       headers: { "Content-Type": "application/json" },

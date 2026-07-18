@@ -544,3 +544,7 @@ nav .tab{font-weight:600 !important;white-space:nowrap;flex-shrink:0}
   width:auto !important;min-width:0 !important;font-size:18px;line-height:1;cursor:pointer;
   color:inherit !important;-webkit-text-fill-color:initial !important;opacity:.75}
 .pass-wrap .pass-eye:hover{opacity:1;transform:translateY(-50%)}
+
+/* กราฟในแชท (Chart.js) */
+.chat-chart-wrap{position:relative;height:300px;max-width:600px;margin:14px 0;
+  background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow-sm)}

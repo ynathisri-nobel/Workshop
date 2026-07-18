@@ -177,7 +177,20 @@ CRITICAL RULES:
    about that company directly and NEVER ask which company.
 9. Do NOT misattribute data: never present one company's records as if they belong to another
    company. When using INTERNAL context, attribute a fact to a company only if that context item
-   is tagged with that company (entity=NAME)."""
+   is tagged with that company (entity=NAME).
+10. Do NOT draw ASCII-art or text charts/graphs (lines made of ╭ ╯ ─ │ etc.) — they render
+   misaligned in the chat and look broken. To present a numeric series or comparison, use a clean
+   Markdown table (e.g. columns for period, revenue, net profit, margin) plus a short text summary
+   of the trend. Never attempt to draw a visual chart with characters.
+11. REAL CHARTS: if the user asks for a chart/graph (กราฟ/แผนภูมิ) or a visual clearly helps, emit
+   a chart by adding a fenced block EXACTLY like this (in addition to a short text summary and/or
+   table):
+   ```chart
+   {"type":"bar","title":"รายได้ (ล้านบาท)","labels":["2022","2023","2024","2025"],"datasets":[{"label":"รายได้","data":[185493,241408,256071,260000]}]}
+   ```
+   type is one of bar|line|pie|doughnut; "data" is numbers only; ONLY use figures that appear in
+   the CONTEXT (never invent); keep the JSON valid, complete and minimal. This is the ONLY allowed
+   way to draw a chart — never ASCII art."""
 
 SET_ADDON = """
 
@@ -218,6 +231,19 @@ def _is_contact_query(text):
     """Heuristic: is the user asking for a contact / phone number / email?"""
     t = (text or "").lower()
     return any(k in t for k in _CONTACT_KEYWORDS)
+
+
+_PROFILE_KEYWORDS = [
+    "ประวัติ", "โปรไฟล์", "ภูมิหลัง", "ข้อมูลบริษัท", "เกี่ยวกับบริษัท", "แนะนำบริษัท",
+    "บริษัททำอะไร", "ทำธุรกิจอะไร", "ประกอบธุรกิจ", "ภาพรวมบริษัท", "รู้จักบริษัท",
+    "profile", "background", "about the company", "company overview", "overview of",
+]
+
+
+def _is_profile_query(text):
+    """Heuristic: is the user asking about a company's general profile/background?"""
+    t = (text or "").lower()
+    return any(k in t for k in _PROFILE_KEYWORDS)
 
 
 ANALYSIS_ADDON = """
@@ -375,6 +401,27 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
                              "the relevant company/companies — names, titles, phone, email):\n"
                              + "\n".join(lines))
 
+    # --- Company profile / background (entity notes) ---
+    # Pulled only for profile/background questions so the assistant can answer using the
+    # history/profile the team saved on the entity. Backend-only.
+    profile_block = ""
+    if _is_profile_query(f"{search_query} {query}"):
+        pids = set(relevant_ids) if relevant_ids else set()
+        if effective_entity_id:
+            pids.add(effective_entity_id)
+        plines = []
+        if pids:
+            with db() as conn:
+                for pid in pids:
+                    r = conn.execute("SELECT name, type, industry, notes FROM entities WHERE id=?",
+                                     (pid,)).fetchone()
+                    if r and r["notes"] and str(r["notes"]).strip():
+                        plines.append(f"- [{r['name']}] ({r['type']} · {r['industry'] or '-'}) "
+                                      f"ประวัติ/โปรไฟล์: {str(r['notes']).strip()}")
+        if plines:
+            profile_block = ("\n\nCOMPANY PROFILE / BACKGROUND (ประวัติ/ข้อมูลบริษัทที่ทีมบันทึกไว้ "
+                             "— authoritative internal profile):\n" + "\n".join(plines))
+
     scope_line = ""
     if effective_entity_id:
         with db() as conn:
@@ -385,7 +432,7 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
                           f"company): {_scope_nm}\n\n")
 
     user_msg = (f"{scope_line}CONTEXT:\n{context or '(no accessible internal data found)'}"
-                f"{issue_block}{set_block}{internal_fin_block}{contact_block}\n\nQUESTION: {query}")
+                f"{issue_block}{set_block}{internal_fin_block}{contact_block}{profile_block}\n\nQUESTION: {query}")
     messages = []
     for h in (history or [])[-6:]:
         messages.append({"role": h["role"], "text": h["text"]})
@@ -440,5 +487,8 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
             "snippet": "",
         })
 
+    _structured_q = (_is_financial_query(f"{search_query} {query}")
+                     or _is_contact_query(f"{search_query} {query}"))
     return {"answer": text, "sources": sources, "open_issues": issues,
+            "inline_images": (not _structured_q),
             "model": ("sonnet" if is_analysis else model_key)}
