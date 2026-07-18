@@ -113,7 +113,7 @@ document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () =>
 
 // ---- Entities ----
 let ENTITIES = [];
-const ENTITY_COMBOS = ["chat-entity", "in-entity", "up-entity", "mt-entity", "is-entity", "mg-entity", "iss-filter"];
+const ENTITY_COMBOS = ["chat-entity", "in-entity", "up-entity", "mt-entity", "mg-entity", "iss-filter"];
 
 // Selected entity id for a combo input (null if none/cleared)
 function entityId(inputId) {
@@ -125,7 +125,7 @@ function entityId(inputId) {
 function esc2(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 
 // Combos on the "Add Data" page where a not-found search offers a quick "add name".
-const ADDABLE_COMBOS = new Set(["in-entity", "up-entity", "mt-entity", "is-entity"]);
+const ADDABLE_COMBOS = new Set(["in-entity", "up-entity", "mt-entity"]);
 
 function setupCombo(inputId) {
   const input = $(inputId);
@@ -468,12 +468,57 @@ function sourcesHtml(sources){
   return `<details class="sources"><summary>ℹ️ แหล่งข้อมูล (${sources.length}) · คลิกเพื่อตรวจสอบ / รายงาน</summary>${cards}</details>`;
 }
 
+// ---- Issues in chat: render open issues with resolve buttons ----
+function issuesHtml(issues) {
+  if (!issues || !issues.length) return "";
+  const cards = issues.map(i => {
+    const title = (i.title || "").length > 50 ? i.title.slice(0, 50) + "…" : i.title;
+    return `<div class="chat-issue" id="chat-issue-${i.id}"><div class="chat-issue-head"><span class="pill ${i.priority}">${i.priority}</span><strong>${esc2(i.entity_name)}</strong>: ${esc2(title)}</div><button class="chat-resolve-btn" onclick="resolveFromChat(${i.id}, this)">กดเพื่อแจ้ง Resolve</button></div>`;
+  }).join("");
+  return `<div class="chat-issues-wrap"><div class="chat-issues-title">⚠️ Issues ที่ค้างอยู่ (${issues.length})</div>${cards}</div>`;
+}
+
+// Resolve an issue directly from the chat
+async function resolveFromChat(issueId, btn) {
+  const note = prompt("อธิบายสั้นๆ ว่าแก้ไขยังไง (เว้นว่างได้):", "");
+  if (note === null) return; // cancelled
+  btn.disabled = true;
+  btn.textContent = "⏳ กำลังบันทึก...";
+  try {
+    await jsonPost(`/api/issues/${issueId}/resolve`, { resolution: note || "" });
+    btn.textContent = "✅ ปิดแล้ว";
+    btn.classList.add("resolved");
+    const card = document.getElementById("chat-issue-" + issueId);
+    if (card) card.classList.add("issue-resolved");
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = "✅ แก้แล้ว";
+    alert("บันทึกไม่สำเร็จ: " + e.message);
+  }
+}
+
+// Offer to resolve issues detected from a newly saved note
+async function offerResolveDetected(issues) {
+  const names = issues.map(i => `• ${i.entity_name}: ${i.title} (${i.priority})`).join("\n");
+  const msg = `AI ตรวจพบว่าโน้ตที่บันทึกอาจเกี่ยวข้องกับ Issue ที่ค้างอยู่:\n\n${names}\n\nต้องการปิด Issue เหล่านี้หรือไม่?`;
+  if (!confirm(msg)) return;
+  for (const issue of issues) {
+    try {
+      await jsonPost(`/api/issues/${issue.id}/resolve`, { resolution: "ปิดอัตโนมัติจากการบันทึกโน้ต" });
+    } catch (e) {
+      console.warn("Failed to resolve issue", issue.id, e);
+    }
+  }
+  alert(`✅ ปิด Issue แล้ว ${issues.length} รายการ`);
+  loadIssues();
+}
+
 function bubbleHtml(m){
   if (m.role === "user")
     return `<div class="bubble user"><div class="body">${esc(m.text)}</div></div>`;
   const { text, charts } = extractCharts(m.text);
   const body = `<div class="md">${renderMarkdown(text)}</div>` + chartsHtml(charts)
-             + chatImagesHtml(m.sources, m.inline_images) + sourcesHtml(m.sources);
+             + chatImagesHtml(m.sources, m.inline_images) + issuesHtml(m.open_issues) + sourcesHtml(m.sources);
   return `<div class="bubble bot"><div class="avatar">${BOT_FACE}</div><div class="body">${body}</div></div>`;
 }
 
@@ -680,7 +725,7 @@ async function sendChat() {
     const entity_id = entityId("chat-entity");
     const history = CUR.messages.slice(0, -1).slice(-12).map(m => ({ role: m.role, text: m.text }));
     const res = await jsonPost("/api/chat", { query: q, entity_id, history, model: "haiku" });
-    CUR.messages.push({ role: "assistant", text: res.answer, sources: res.sources, inline_images: res.inline_images });
+    CUR.messages.push({ role: "assistant", text: res.answer, sources: res.sources, inline_images: res.inline_images, open_issues: res.open_issues });
     touchConv();
     renderChat();
   } catch (e) {
@@ -692,6 +737,114 @@ function autoGrow(){
   const t = $("chat-text");
   t.style.height = "auto";
   t.style.height = Math.min(t.scrollHeight, 160) + "px";
+}
+
+// ---- Export current chat conversation to PDF ----
+async function exportChatPDF() {
+  if (!CUR || !CUR.messages.length) {
+    alert("ยังไม่มีข้อความในแชทนี้");
+    return;
+  }
+
+  // Open window IMMEDIATELY before async to avoid popup blocker
+  const printWin = window.open("", "_blank");
+  if (!printWin) {
+    alert("กรุณาอนุญาต popup ใน browser แล้วลองอีกครั้ง");
+    return;
+  }
+  printWin.document.write("<html><body><p style='font-family:sans-serif;padding:40px;text-align:center;font-size:18px'>⏳ กำลังสรุปข้อมูล...</p></body></html>");
+
+  const btn = $("export-pdf-btn");
+  btn.disabled = true;
+  btn.textContent = "⏳ กำลังสรุป...";
+
+  try {
+    // Call AI to summarize the conversation
+    const res = await jsonPost("/api/chat/summarize", {
+      messages: CUR.messages.map(m => ({ role: m.role, text: m.text })),
+      title: CUR.title
+    });
+
+    const summary = res.summary || "ไม่สามารถสรุปได้";
+    const title = CUR.title || "Untitled";
+    const dateStr = new Date().toLocaleString("th-TH");
+    const userName = USER ? (USER.full_name || USER.username) : "-";
+
+    // Collect images from conversation sources
+    const images = [];
+    for (const m of CUR.messages) {
+      if (m.sources) {
+        for (const s of m.sources) {
+          if (s.image_url && !images.includes(s.image_url)) {
+            images.push(s.image_url);
+          }
+        }
+      }
+    }
+
+    // Convert markdown summary to HTML (reuse renderMarkdown)
+    const summaryHtml = renderMarkdown(summary);
+
+    // Build printable HTML
+    let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Report - ${esc(title)}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun','IBM Plex Sans Thai',sans-serif;font-size:14px;color:#1a1a1a;padding:30px 40px;line-height:1.7}
+h1{font-size:22px;color:#e65100;margin-bottom:4px}
+h2{font-size:16px;color:#1e3a5f;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:4px}
+h3{font-size:14px;color:#333;margin:14px 0 6px}
+p{margin:0 0 10px}
+ul,ol{margin:6px 0 12px;padding-left:24px}
+li{margin:3px 0}
+strong{font-weight:700}
+code{background:#f5f5f5;padding:1px 4px;border-radius:3px;font-size:12px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}
+th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}
+th{background:#f57c00;color:#fff;font-weight:700}
+tr:nth-child(even){background:#fafafa}
+tr:hover{background:#fff3e0}
+.header{border-bottom:2px solid #f57c00;padding-bottom:12px;margin-bottom:20px}
+.meta{font-size:11px;color:#666;margin-top:4px}
+.images{margin:16px 0}
+.images img{max-width:300px;max-height:200px;border:1px solid #ddd;border-radius:6px;margin:6px 8px 6px 0}
+.footer{margin-top:30px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#999;text-align:center}
+@media print{body{padding:15px 20px}@page{margin:12mm 10mm}.images img{max-width:250px}}
+</style></head><body>
+<div class="header">
+<h1>Whisper CRM - Report</h1>
+<div class="meta">${esc(title)} | ${esc(dateStr)} | By: ${esc(userName)}</div>
+</div>
+${summaryHtml}`;
+
+    // Add images if any
+    if (images.length) {
+      html += `<h2>รูปภาพที่เกี่ยวข้อง</h2><div class="images">`;
+      for (const imgUrl of images) {
+        html += `<img src="${url(imgUrl)}?token=${encodeURIComponent(TOKEN)}" />`;
+      }
+      html += `</div>`;
+    }
+
+    html += `<div class="footer">Whisper CRM Knowledge Assistant | ${esc(dateStr)}</div></body></html>`;
+
+    // Write to the already-open window
+    printWin.document.open();
+    printWin.document.write(html);
+    printWin.document.close();
+    setTimeout(() => {
+      printWin.focus();
+      printWin.print();
+    }, 1000);
+
+  } catch (e) {
+    if (printWin) printWin.close();
+    alert("ส่งออก PDF ไม่สำเร็จ: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "📄 ส่งออก PDF";
+  }
 }
 
 // ---- Input actions ----
@@ -719,10 +872,11 @@ async function saveText() {
   if (!eid) { m.className = "msg error"; m.textContent = "กรุณาเลือกลูกค้า/พาร์ทเนอร์จากรายการก่อนบันทึก"; return; }
   try {
     const parts = [];
+    let ingestResult = null;
     if (text.trim()) {
       m.textContent = "กำลังบันทึกข้อความ...";
-      const r = await jsonPost("/api/ingest/text", { text, entity_id: eid, sensitivity: sens, force_label: $("in-flag").value || null, event_date: $("in-date").value || null });
-      parts.push(`ข้อความ ${r.stored_chunks} ส่วน`);
+      ingestResult = await jsonPost("/api/ingest/text", { text, entity_id: eid, sensitivity: sens, force_label: $("in-flag").value || null, event_date: $("in-date").value || null });
+      parts.push(`ข้อความ ${ingestResult.stored_chunks} ส่วน`);
     }
     if (imgs.length) {
       let okImg = 0;
@@ -739,6 +893,10 @@ async function saveText() {
     }
     flashOk(m, "✅ บันทึกแล้ว (" + parts.join(", ") + ")");
     $("in-text").value = ""; $("in-image").value = "";
+    // Auto-detect: if the note resolves any open issues, offer to close them
+    if (ingestResult && ingestResult.detected_issues && ingestResult.detected_issues.length) {
+      offerResolveDetected(ingestResult.detected_issues);
+    }
   } catch (e) { m.className = "msg error"; m.textContent = "❌ " + e.message; }
 }
 async function uploadFile() {
@@ -970,11 +1128,11 @@ $("login-pass").addEventListener("keydown", e => { if (e.key==="Enter") login();
 $("logout").onclick = logout;
 $("chat-send").onclick = sendChat;
 $("new-chat").onclick = newConv;
+$("export-pdf-btn").onclick = exportChatPDF;
 $("chat-text").addEventListener("input", autoGrow);
 $("chat-text").addEventListener("keydown", e => { if (e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendChat(); }});
 $("in-text-btn").onclick = saveText;
 $("up-btn").onclick = uploadFile;
-$("is-btn").onclick = saveIssue;
 $("nu-btn").onclick = createUser;
 $("ne-btn").onclick = createEntity;
 $("iss-open-btn").onclick = () => loadIssues("open");
@@ -988,3 +1146,111 @@ $("mg-q").addEventListener("keydown", e => { if (e.key==="Enter") searchChunks()
 
 // auto-login if token exists
 if (TOKEN) showApp();
+
+
+// ---- Speech-to-Text (Web Speech API) ----
+// ใช้ปุ่มไมค์บน Card 1 (โน้ต/แชท) และ Card 3 (Issue) เพื่อบันทึกเสียงแล้วแปลงเป็นข้อความ
+(function initSpeechToText() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.querySelectorAll(".mic-btn").forEach(btn => btn.style.display = "none");
+    console.warn("[STT] Speech Recognition API not supported.");
+    return;
+  }
+
+  const MIC_TARGETS = {
+    "mic-in-text": "in-text",
+  };
+
+  Object.entries(MIC_TARGETS).forEach(([btnId, textareaId]) => {
+    const btn = document.getElementById(btnId);
+    const textarea = document.getElementById(textareaId);
+    console.log(`[STT] Setup: btn=${btnId}`, btn, `textarea=${textareaId}`, textarea);
+    if (!btn || !textarea) {
+      console.warn(`[STT] ไม่พบ element: btn=${btnId}(${!!btn}) textarea=${textareaId}(${!!textarea})`);
+      return;
+    }
+
+    let recognition = null;
+    let isRecording = false;
+
+    btn.addEventListener("click", () => {
+      if (isRecording) {
+        // หยุด
+        isRecording = false;
+        btn.classList.remove("mic-active");
+        btn.textContent = "🎤";
+        if (recognition) {
+          try { recognition.stop(); } catch(e) {}
+          recognition = null;
+        }
+      } else {
+        // เริ่ม
+        isRecording = true;
+        btn.classList.add("mic-active");
+        btn.textContent = "⏹️";
+
+        recognition = new SpeechRecognition();
+        recognition.lang = "th-TH";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        // เก็บข้อความเดิมที่มีอยู่ก่อนเริ่มอัด
+        const originalText = textarea.value;
+
+        recognition.onresult = function(event) {
+          let final = "";
+          let interim = "";
+          for (let i = 0; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              final += event.results[i][0].transcript;
+            } else {
+              interim += event.results[i][0].transcript;
+            }
+          }
+          const sep = originalText && !originalText.endsWith(" ") && !originalText.endsWith("\n") ? " " : "";
+          textarea.value = originalText + sep + final + (interim ? " ..." + interim : "");
+          textarea.scrollTop = textarea.scrollHeight;
+          console.log("[STT] result:", {final, interim});
+        };
+
+        recognition.onerror = function(event) {
+          console.error("[STT] error:", event.error);
+          if (event.error === "not-allowed") {
+            alert("กรุณาอนุญาตการใช้ไมค์ใน browser");
+          }
+        };
+
+        recognition.onend = function() {
+          console.log("[STT] ended, isRecording=", isRecording);
+          // ลบ interim marker
+          textarea.value = textarea.value.replace(/\s*\.\.\..*/g, function(match) {
+            // Only remove if it looks like our interim marker at the end
+            if (textarea.value.endsWith(match)) return "";
+            return match;
+          });
+          if (isRecording) {
+            // ถ้ายังอยู่ในโหมดอัด → restart (Chrome หยุดเองหลังเงียบนาน)
+            try { recognition.start(); } catch(e) {
+              console.error("[STT] restart failed:", e);
+              isRecording = false;
+              btn.classList.remove("mic-active");
+              btn.textContent = "🎤";
+            }
+          }
+        };
+
+        try {
+          recognition.start();
+          console.log("[STT] recognition.start() called");
+        } catch(e) {
+          console.error("[STT] start failed:", e);
+          isRecording = false;
+          btn.classList.remove("mic-active");
+          btn.textContent = "🎤";
+          alert("ไม่สามารถเริ่มฟังเสียงได้: " + e.message);
+        }
+      }
+    });
+  });
+})();

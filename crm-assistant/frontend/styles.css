@@ -548,3 +548,96 @@ nav .tab{font-weight:600 !important;white-space:nowrap;flex-shrink:0}
 /* กราฟในแชท (Chart.js) */
 .chat-chart-wrap{position:relative;height:300px;max-width:600px;margin:14px 0;
   background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow-sm)}
+
+
+/* ---- Speech-to-Text: ปุ่มไมค์ + animation ---- */
+.voice-input-wrap{position:relative;margin-bottom:11px}
+.voice-input-wrap textarea{margin-bottom:0 !important;padding-right:52px !important}
+.data-card .mic-btn,
+.card .mic-btn,
+.mic-btn{
+  position:absolute !important;right:8px;top:10px;
+  width:38px !important;height:38px !important;min-width:0 !important;
+  padding:0 !important;margin:0 !important;
+  border-radius:50% !important;
+  background:#ffffff !important;background-color:#ffffff !important;background-image:none !important;
+  border:2px solid #d2d7e6 !important;
+  box-shadow:0 2px 8px rgba(16,23,41,.08) !important;
+  font-size:18px !important;line-height:1 !important;
+  cursor:pointer !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  color:#6b7488 !important;-webkit-text-fill-color:#6b7488 !important;
+  text-shadow:none !important;
+  transition:border-color .2s,box-shadow .2s,transform .15s !important;
+}
+.data-card .mic-btn:hover,
+.card .mic-btn:hover,
+.mic-btn:hover{
+  border-color:#f57c00 !important;
+  color:#f57c00 !important;-webkit-text-fill-color:#f57c00 !important;
+  transform:scale(1.08) !important;
+  box-shadow:0 4px 14px rgba(245,124,0,.2) !important;
+  background:#ffffff !important;background-color:#ffffff !important;
+}
+.data-card .mic-btn.mic-active,
+.card .mic-btn.mic-active,
+.mic-btn.mic-active{
+  border-color:#e5484d !important;
+  background:#fee2e2 !important;background-color:#fee2e2 !important;background-image:none !important;
+  color:#e5484d !important;-webkit-text-fill-color:#e5484d !important;
+  box-shadow:0 0 0 4px rgba(229,72,77,.18),0 4px 14px rgba(229,72,77,.2) !important;
+  animation:mic-pulse 1.2s ease-in-out infinite !important;
+}
+@keyframes mic-pulse{
+  0%,100%{box-shadow:0 0 0 4px rgba(229,72,77,.18),0 4px 14px rgba(229,72,77,.2)}
+  50%{box-shadow:0 0 0 8px rgba(229,72,77,.12),0 4px 18px rgba(229,72,77,.3)}
+}
+
+
+/* ---- Issues in Chat: resolve buttons ---- */
+.chat-issues-wrap{margin:8px 0 4px;border-left:3px solid #f59e0b;background:#fffdf5;border-radius:4px;padding:6px 10px;display:inline-block;max-width:100%}
+.chat-issues-title{font-size:11px;font-weight:700;color:#92400e;margin:0 0 4px;letter-spacing:.2px}
+.chat-issue{display:flex;align-items:center;gap:6px;padding:3px 0;margin:0}
+.chat-issue+.chat-issue{border-top:1px solid rgba(253,230,138,.5)}
+.chat-issue-head{font-size:11.5px;line-height:1.3;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0;padding:0}
+.chat-issue-head .pill{margin:0 4px 0 0;font-size:9px;padding:1px 5px;vertical-align:middle}
+.chat-issue-head strong{font-weight:600}
+.chat-issue-desc{display:none}
+.chat-resolve-btn{
+  background:#fff !important;background-color:#fff !important;background-image:none !important;
+  border:1px solid #12a150 !important;
+  color:#12a150 !important;-webkit-text-fill-color:#12a150 !important;
+  padding:2px 8px !important;border-radius:4px !important;
+  font-size:11px !important;font-weight:600 !important;
+  cursor:pointer !important;box-shadow:none !important;
+  transition:all .15s !important;white-space:nowrap !important;flex-shrink:0 !important;
+}
+.chat-resolve-btn:hover{
+  background:#f0fdf4 !important;background-color:#f0fdf4 !important;
+  box-shadow:0 1px 4px rgba(18,161,80,.15) !important;
+}
+.chat-resolve-btn.resolved{
+  background:#dcfce7 !important;background-color:#dcfce7 !important;
+  border-color:#86efac !important;
+  color:#15803d !important;-webkit-text-fill-color:#15803d !important;
+  cursor:default !important;
+}
+.chat-issue.issue-resolved{opacity:.5}
+
+
+/* ---- Export PDF button ---- */
+.export-pdf-btn{
+  background:#fff !important;background-color:#fff !important;background-image:none !important;
+  border:1px solid var(--line) !important;
+  color:#475569 !important;-webkit-text-fill-color:#475569 !important;
+  padding:7px 12px !important;border-radius:8px !important;
+  font-size:12px !important;font-weight:600 !important;
+  cursor:pointer !important;box-shadow:none !important;
+  white-space:nowrap !important;margin-left:auto !important;
+  transition:all .15s !important;
+}
+.export-pdf-btn:hover{
+  border-color:var(--primary) !important;
+  color:var(--primary) !important;-webkit-text-fill-color:var(--primary) !important;
+  box-shadow:0 2px 8px rgba(245,124,0,.12) !important;
+}

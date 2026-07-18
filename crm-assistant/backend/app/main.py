@@ -26,6 +26,11 @@ class ChatMsg(BaseModel):
     text: str
 
 
+class SummarizeRequest(BaseModel):
+    messages: List[ChatMsg]
+    title: Optional[str] = None
+
+
 class ChatRequest(BaseModel):
     query: str
     entity_id: Optional[int] = None
@@ -292,6 +297,63 @@ def entity_detail(entity_id: int, user: dict = Depends(get_current_user)):
             "issues": [dict(x) for x in issues]}
 
 
+# ---------------- Auto-detect resolved issues from note text ----------------
+def _detect_resolved_issues(note_text, entity_id, user):
+    """Check if a newly saved note implies that any open issues for the entity have been resolved.
+    Uses a lightweight AI call to match the note against open issue titles/descriptions."""
+    from . import bedrock
+    from .auth import sql_access_filter
+
+    clause, params = sql_access_filter(user)
+    acc = clause.replace('sensitivity', 'i.sensitivity').replace('department', 'i.department')
+    with db() as conn:
+        issues = conn.execute(
+            f"""SELECT i.id, i.title, i.description, i.priority, e.name AS entity_name
+                FROM issues i JOIN entities e ON e.id = i.entity_id
+                WHERE i.status='open' AND i.entity_id=? AND {acc}""",
+            [entity_id] + params).fetchall()
+    if not issues:
+        return []
+
+    # Build a concise list of open issues for the AI to check against
+    issue_list = "\n".join(
+        f"[ID={r['id']}] {r['title']}: {(r['description'] or '')[:100]}"
+        for r in issues
+    )
+
+    prompt = f"""Given this new note about a customer/partner:
+---
+{note_text[:500]}
+---
+
+And these OPEN issues for the same company:
+{issue_list}
+
+Which issues (if any) does the note indicate have been RESOLVED or FIXED?
+Reply with ONLY a JSON array of issue IDs that are resolved, e.g. [3, 7].
+If none are resolved, reply with [].
+Reply ONLY with the JSON array, nothing else."""
+
+    try:
+        result = bedrock.chat(
+            "You are a concise JSON-only assistant.", 
+            [{"role": "user", "text": prompt}],
+            max_tokens=100, temperature=0.0,
+            model_id=config.CLASSIFY_MODEL_ID)
+        # Parse the JSON array from the response
+        import json, re as _re
+        match = _re.search(r'\[[\d\s,]*\]', result or "")
+        if not match:
+            return []
+        resolved_ids = set(json.loads(match.group()))
+        # Return only valid open issues that were matched
+        return [{"id": r["id"], "title": r["title"], "entity_name": r["entity_name"],
+                 "priority": r["priority"]}
+                for r in issues if r["id"] in resolved_ids]
+    except Exception:
+        return []
+
+
 # ---------------- Ingestion (INPUT side, RBAC guarded) ----------------
 def _group_for(conn, entity_id, user, override=None):
     """Customer group (department) that a piece of data should belong to. Data about a
@@ -319,7 +381,16 @@ def ingest_text(body: ChatTextIngest, user: dict = Depends(require_input)):
         entity_id=body.entity_id, sensitivity=body.sensitivity, department=dept,
         source_label=body.source_label, created_by=user["id"],
         default_label=body.force_label)
-    return {"stored_chunks": n}
+
+    # --- Auto-detect: does this note resolve any open issues? ---
+    detected_issues = []
+    if body.entity_id:
+        try:
+            detected_issues = _detect_resolved_issues(body.text, body.entity_id, user)
+        except Exception:
+            pass  # non-critical, don't block ingestion
+
+    return {"stored_chunks": n, "detected_issues": detected_issues}
 
 
 @app.post("/api/ingest/file")
@@ -511,6 +582,44 @@ def create_user(body: UserIn, user: dict = Depends(require_admin)):
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+# ---------------- Summarize chat for PDF export ----------------
+SUMMARIZE_SYSTEM = """You are a business report writer. Given a chat conversation between a user
+and a CRM assistant, create a CONCISE executive summary report in Thai (or match the conversation language).
+
+RULES:
+1. Structure the report with clear sections using Markdown:
+   - ## สรุปภาพรวม (1-2 paragraphs)
+   - ## ประเด็นสำคัญ (bullet points)
+   - ## ข้อมูลเชิงตัวเลข (use Markdown TABLE if any numbers/financials were discussed)
+   - ## Issues / ปัญหาที่ค้าง (if any)
+   - ## ข้อเสนอแนะ / Next Steps (if any)
+2. Be CONCISE — combine repeated questions into one insight. Remove redundancy.
+3. If financial data was discussed, present it as a clean Markdown table.
+4. Keep the total length under 800 words.
+5. Do NOT include the raw Q&A. This is a SUMMARY report.
+6. Use professional business Thai language."""
+
+
+@app.post("/api/chat/summarize")
+def summarize_chat(body: SummarizeRequest, user: dict = Depends(get_current_user)):
+    """Summarize a chat conversation into a concise report for PDF export."""
+    from . import bedrock
+
+    messages_text = "\n".join(
+        f"{'Q' if m.role == 'user' else 'A'}: {m.text}" for m in body.messages
+    )
+
+    prompt = f"CONVERSATION TITLE: {body.title or 'Untitled'}\n\nFULL CONVERSATION:\n{messages_text}\n\nPlease write the executive summary report:"
+
+    summary = bedrock.chat(
+        SUMMARIZE_SYSTEM,
+        [{"role": "user", "text": prompt}],
+        max_tokens=2000, temperature=0.2,
+        model_id=config.CHAT_MODELS.get("haiku"))
+
+    return {"summary": summary}
 
 
 # ---------------- Data correction: manage / edit / delete / flag chunks ----------------

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="static/styles.css?v=20260717y" />
+  <link rel="stylesheet" href="static/styles.css?v=20260717pdf" />
 </head>
 <body>
   <!-- Login -->
@@ -16,7 +16,7 @@
       <div class="login-logo"><img src="static/Picture/Logoicon.png" alt="Whisper logo"><img src="static/Picture/Logo.png" alt="Whisper logo"></div>
       
       <h1></h1>
-      <p class="sub">ทุกการพบปะ ไม่มีหายไป</p>
+      <p class="sub">Turning every conversation into business insight.</p>
       <input id="login-user" placeholder="Username" autocomplete="username" />
       <input id="login-pass" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="login-btn">เข้าสู่ระบบ</button>
@@ -60,6 +60,7 @@
                        placeholder="🔍 พิมพ์ชื่อลูกค้า/พาร์ทเนอร์ (เว้นว่าง = ทั้งหมด)" />
                 <div class="combo-menu hidden"></div>
               </div>
+              <button id="export-pdf-btn" class="export-pdf-btn" title="ให้สรุปข้อมูลและส่งออก PDF">📄 ให้สรุปข้อมูลและส่งออก PDF</button>
             </div>
             <div id="chat-log" class="chat-log"></div>
             <div class="chat-input">
@@ -83,7 +84,10 @@
             <p class="card-desc">พิมพ์บันทึก/ข้อความสั้น ๆ ที่ได้จากลูกค้าหรือพาร์ทเนอร์เองได้ แนบรูปได้</p>
             <div class="combo"><input id="in-entity" class="combo-input" autocomplete="off" placeholder="🔍 เลือกลูกค้า/พาร์ทเนอร์ (พิมพ์เพื่อค้นหา)" /><div class="combo-menu hidden"></div></div>
             <label>วันที่ <input id="in-date" type="date" /></label>
-            <textarea id="in-text" rows="6" placeholder="พิมพ์บันทึก/ข้อมูลที่ได้จากลูกค้าหรือพาร์ทเนอร์..."></textarea>
+            <div class="voice-input-wrap">
+              <textarea id="in-text" rows="6" placeholder="พิมพ์บันทึก/ข้อมูลที่ได้จากลูกค้าหรือพาร์ทเนอร์..." data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"></textarea>
+              <button type="button" class="mic-btn" id="mic-in-text" title="กดค้างเพื่อพูด (Speech-to-Text)">🎤</button>
+            </div>
             <label>ระดับความลับ
               <select id="in-sens"><option value="1">1 - ปกติ</option><option value="2">2 - ลับ</option><option value="3">3 - ลับมาก</option></select>
             </label>
@@ -109,24 +113,6 @@
             </label>
             <button id="up-btn">อัปโหลด &amp; ประมวลผล</button>
             <div class="msg" id="up-msg"></div>
-          </div>
-
-          <div class="card data-card dc-issue">
-            <div class="dc-tag">3 · Issue</div>
-            <h3>เพิ่ม Issue ที่ค้างอยู่</h3>
-            <p class="card-desc">บันทึกปัญหา/ประเด็นที่ยังค้างอยู่ของลูกค้าหรือพาร์ทเนอร์ พร้อมระดับความสำคัญ เพื่อติดตามและตามแก้ภายหลัง</p>
-            <div class="combo"><input id="is-entity" class="combo-input" autocomplete="off" placeholder="🔍 เลือกลูกค้า/พาร์ทเนอร์ (พิมพ์เพื่อค้นหา)" /><div class="combo-menu hidden"></div></div>
-            <label>วันที่ <input id="is-date" type="date" /></label>
-            <input id="is-title" placeholder="หัวข้อปัญหา" />
-            <textarea id="is-desc" rows="3" placeholder="รายละเอียด"></textarea>
-            <label>ความสำคัญ
-              <select id="is-pri"><option value="high">สูง</option><option value="medium" selected>กลาง</option><option value="low">ต่ำ</option></select>
-            </label>
-            <label>ระดับความลับ
-              <select id="is-sens"><option value="1">1 - ปกติ</option><option value="2">2 - ลับ</option><option value="3">3 - ลับมาก</option></select>
-            </label>
-            <button id="is-btn">บันทึก Issue</button>
-            <div class="msg" id="is-msg"></div>
           </div>
           </div>
         </div>
@@ -220,6 +206,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="static/app.js?v=20260718g"></script>
+  <script src="static/app.js?v=20260718pdf3"></script>
 </body>
 </html>
