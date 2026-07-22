@@ -1,40 +1,26 @@
-"""PostgreSQL database layer and schema."""
-import json
-from contextlib import contextmanager
+"""
+PostgreSQL Database Initialization Script
+Migrates the SQLite schema to PostgreSQL on AWS RDS.
+
+Usage:
+    pip install psycopg2-binary
+    python init_postgres.py
+"""
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from . import config
 
+# --- RDS Connection Config ---
+DB_CONFIG = {
+    "host": "database-1.cav6m4s4mo5b.us-east-1.rds.amazonaws.com",
+    "port": 5432,
+    "dbname": "postgres",
+    "user": "postgres",
+    "password": "nEGPFDsSOdsdTEEULZea",
+    "sslmode": "require",
+}
 
-def get_conn():
-    conn = psycopg2.connect(
-        host=config.PG_HOST,
-        port=config.PG_PORT,
-        dbname=config.PG_DBNAME,
-        user=config.PG_USER,
-        password=config.PG_PASSWORD,
-        sslmode="require",
-    )
-    conn.autocommit = False
-    return conn
-
-
-@contextmanager
-def db():
-    conn = get_conn()
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        yield cur
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        cur.close()
-        conn.close()
-
-
-SCHEMA = """
+SCHEMA_SQL = """
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
@@ -47,6 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Entities (customers/partners)
 CREATE TABLE IF NOT EXISTS entities (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
@@ -58,6 +45,7 @@ CREATE TABLE IF NOT EXISTS entities (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Entity aliases (alternate names)
 CREATE TABLE IF NOT EXISTS entity_aliases (
     id SERIAL PRIMARY KEY,
     entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
@@ -67,6 +55,7 @@ CREATE TABLE IF NOT EXISTS entity_aliases (
 );
 CREATE INDEX IF NOT EXISTS idx_entity_aliases_entity ON entity_aliases(entity_id);
 
+-- Contacts
 CREATE TABLE IF NOT EXISTS contacts (
     id SERIAL PRIMARY KEY,
     entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
@@ -76,6 +65,7 @@ CREATE TABLE IF NOT EXISTS contacts (
     phone TEXT
 );
 
+-- Interactions (meeting notes)
 CREATE TABLE IF NOT EXISTS interactions (
     id SERIAL PRIMARY KEY,
     entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
@@ -87,6 +77,7 @@ CREATE TABLE IF NOT EXISTS interactions (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Documents
 CREATE TABLE IF NOT EXISTS documents (
     id SERIAL PRIMARY KEY,
     entity_id INTEGER REFERENCES entities(id) ON DELETE SET NULL,
@@ -98,6 +89,7 @@ CREATE TABLE IF NOT EXISTS documents (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Knowledge chunks (RAG store)
 CREATE TABLE IF NOT EXISTS chunks (
     id SERIAL PRIMARY KEY,
     entity_id INTEGER REFERENCES entities(id) ON DELETE CASCADE,
@@ -119,6 +111,7 @@ CREATE TABLE IF NOT EXISTS chunks (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Issues
 CREATE TABLE IF NOT EXISTS issues (
     id SERIAL PRIMARY KEY,
     entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
@@ -136,6 +129,7 @@ CREATE TABLE IF NOT EXISTS issues (
     resolved_by INTEGER REFERENCES users(id)
 );
 
+-- Financials
 CREATE TABLE IF NOT EXISTS financials (
     id SERIAL PRIMARY KEY,
     entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
@@ -151,23 +145,73 @@ CREATE TABLE IF NOT EXISTS financials (
 );
 """
 
-
-def init_db():
-    conn = get_conn()
-    try:
-        cur = conn.cursor()
-        cur.execute(SCHEMA)
-        conn.commit()
-        cur.close()
-    finally:
-        conn.close()
+# Seed demo users (same as SQLite seed)
+SEED_USERS = [
+    ("admin", "admin123", "System Admin", "admin", "all", 3, 1),
+    ("exec", "exec123", "คุณสมชาย (CEO)", "executive", "all", 3, 1),
+    ("sales1", "sales123", "Napat (Sales Mgr)", "manager", "sales", 2, 1),
+    ("viewer", "view123", "Junior Viewer", "viewer", "sales", 1, 0),
+    ("fin1", "fin123", "Ratchada (Finance)", "manager", "finance", 3, 1),
+]
 
 
-def dumps_vec(vec):
-    return json.dumps([round(float(x), 6) for x in vec])
+def hash_password(password: str) -> str:
+    """Hash password using bcrypt (same as app.auth)."""
+    from passlib.context import CryptContext
+    ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    return ctx.hash(password)
 
 
-def loads_vec(s):
-    if not s:
-        return None
-    return json.loads(s)
+def main():
+    print(f"Connecting to PostgreSQL at {DB_CONFIG['host']}...")
+    conn = psycopg2.connect(**DB_CONFIG)
+    conn.autocommit = True
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    # Create schema
+    print("Creating tables...")
+    cur.execute(SCHEMA_SQL)
+    print("Schema created successfully.")
+
+    # Seed users
+    print("Seeding demo users...")
+    for (username, password, full_name, role, department, sensitivity, can_input) in SEED_USERS:
+        cur.execute("SELECT 1 FROM users WHERE username = %s", (username,))
+        if not cur.fetchone():
+            pw_hash = hash_password(password)
+            cur.execute(
+                """INSERT INTO users (username, password_hash, full_name, role, department, allowed_sensitivity, can_input)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                (username, pw_hash, full_name, role, department, sensitivity, can_input)
+            )
+            print(f"  Created user: {username}")
+        else:
+            print(f"  User already exists: {username}")
+
+    # Seed entities
+    DEMO_ENTITIES = [
+        ("Siam Cement Group", "customer", "Manufacturing", "sales", "ลูกค้ารายใหญ่ภาคการผลิต สนใจโซลูชัน ERP"),
+        ("Bangkok Bank", "customer", "Banking", "sales", "Enterprise customer, interested in cloud migration"),
+        ("AWS Thailand", "partner", "Cloud", "general", "Strategic cloud partner"),
+        ("PTT Digital", "customer", "Energy", "finance", "โครงการ data platform งบประมาณสูง (confidential)"),
+    ]
+
+    print("Seeding entities...")
+    for (name, etype, industry, dept, notes) in DEMO_ENTITIES:
+        cur.execute("SELECT 1 FROM entities WHERE name = %s", (name,))
+        if not cur.fetchone():
+            cur.execute(
+                "INSERT INTO entities (name, type, industry, owner_department, notes) VALUES (%s, %s, %s, %s, %s)",
+                (name, etype, industry, dept, notes)
+            )
+            print(f"  Created entity: {name}")
+        else:
+            print(f"  Entity already exists: {name}")
+
+    cur.close()
+    conn.close()
+    print("\nDone! PostgreSQL database is ready.")
+
+
+if __name__ == "__main__":
+    main()

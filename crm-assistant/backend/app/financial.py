@@ -10,9 +10,10 @@ from .auth import sql_access_filter
 def internal_financials(user, entity_id):
     """Return internal financial rows the user is allowed to see."""
     clause, params = sql_access_filter(user)
-    sql = f"SELECT * FROM financials WHERE source_type='internal' AND entity_id=? AND {clause}"
-    with db() as conn:
-        rows = conn.execute(sql, [entity_id] + params).fetchall()
+    sql = f"SELECT * FROM financials WHERE source_type='internal' AND entity_id=%s AND {clause}"
+    with db() as cur:
+        cur.execute(sql, [entity_id] + params)
+        rows = cur.fetchall()
     return [dict(r) for r in rows]
 
 
@@ -37,8 +38,9 @@ def external_financials(entity_name):
 
 
 def financial_overview(user, entity_id):
-    with db() as conn:
-        ent = conn.execute("SELECT * FROM entities WHERE id=?", (entity_id,)).fetchone()
+    with db() as cur:
+        cur.execute("SELECT * FROM entities WHERE id=%s", (entity_id,))
+        ent = cur.fetchone()
     if not ent:
         return {"error": "entity not found"}
     return {

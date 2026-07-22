@@ -18,10 +18,11 @@ def retrieve(query, user, top_k=None, entity_id=None):
     clause, params = sql_access_filter(user)
     sql = f"SELECT * FROM chunks WHERE embedding IS NOT NULL AND {clause}"
     if entity_id:
-        sql += " AND entity_id = ?"
+        sql += " AND entity_id = %s"
         params = params + [entity_id]
-    with db() as conn:
-        rows = conn.execute(sql, params).fetchall()
+    with db() as cur:
+        cur.execute(sql, params)
+        rows = cur.fetchall()
     if not rows:
         return []
     qv = np.array(bedrock.embed_query(query), dtype=np.float32)
@@ -36,10 +37,11 @@ def retrieve(query, user, top_k=None, entity_id=None):
     return results
 
 
-def _entity_name(conn, entity_id):
+def _entity_name(cur, entity_id):
     if not entity_id:
         return None
-    row = conn.execute("SELECT name FROM entities WHERE id=?", (entity_id,)).fetchone()
+    cur.execute("SELECT name FROM entities WHERE id=%s", (entity_id,))
+    row = cur.fetchone()
     return row["name"] if row else None
 
 
@@ -93,16 +95,19 @@ def resolve_entity(text, user):
     if not text:
         return None
     depts = visible_departments(user)
-    with db() as conn:
+    with db() as cur:
         if depts is None:
-            ents = conn.execute("SELECT id,name,registration_no FROM entities").fetchall()
+            cur.execute("SELECT id,name,registration_no FROM entities")
+            ents = cur.fetchall()
         else:
-            ph = ",".join("?" for _ in depts)
-            ents = conn.execute(
+            ph = ",".join("%s" for _ in depts)
+            cur.execute(
                 f"SELECT id,name,registration_no FROM entities WHERE owner_department IN ({ph})",
-                sorted(depts)).fetchall()
+                tuple(sorted(depts)))
+            ents = cur.fetchall()
         allowed_ids = {e["id"] for e in ents}
-        alias_rows = conn.execute("SELECT entity_id, alias FROM entity_aliases").fetchall()
+        cur.execute("SELECT entity_id, alias FROM entity_aliases")
+        alias_rows = cur.fetchall()
 
     low = text.lower()
     # label -> entity_id, gathered from names, registration numbers and aliases
@@ -126,9 +131,9 @@ def resolve_entity(text, user):
 def build_context(chunks):
     """Render retrieved chunks into a numbered, labeled context block for the LLM."""
     lines = []
-    with db() as conn:
+    with db() as cur:
         for i, c in enumerate(chunks, 1):
-            ent = _entity_name(conn, c.get("entity_id")) or "-"
+            ent = _entity_name(cur, c.get("entity_id")) or "-"
             label = c["fact_or_opinion"].upper()
             who = f" (by {c['source_person']})" if c.get("source_person") else ""
             src = c.get("source_label") or "-"
@@ -144,10 +149,11 @@ def open_issues(user, entity_id=None):
               JOIN entities e ON e.id = i.entity_id
               WHERE i.status='open' AND {clause.replace('sensitivity','i.sensitivity').replace('department','i.department')}"""
     if entity_id:
-        sql += " AND i.entity_id = ?"
+        sql += " AND i.entity_id = %s"
         params = params + [entity_id]
-    with db() as conn:
-        return [dict(r) for r in conn.execute(sql, params).fetchall()]
+    with db() as cur:
+        cur.execute(sql, params)
+        return [dict(r) for r in cur.fetchall()]
 
 
 CHAT_SYSTEM = """You are a CRM Knowledge Assistant for company executives and account managers.
@@ -324,12 +330,12 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
         try:
             hint = None
             if effective_entity_id:
-                with db() as conn:
-                    hint = _entity_name(conn, effective_entity_id)
-                    # Prefer a ticker or English-name alias for a more accurate SET match.
-                    arows = conn.execute(
-                        "SELECT alias, alias_type FROM entity_aliases WHERE entity_id=?",
-                        (effective_entity_id,)).fetchall()
+                with db() as cur:
+                    hint = _entity_name(cur, effective_entity_id)
+                    cur.execute(
+                        "SELECT alias, alias_type FROM entity_aliases WHERE entity_id=%s",
+                        (effective_entity_id,))
+                    arows = cur.fetchall()
                 by_type = {a["alias_type"]: a["alias"] for a in arows}
                 hint = by_type.get("ticker") or by_type.get("en") or hint
             set_res = setdata.lookup(f"{search_query}\n{query}\n{hint or ''}", hint_name=hint)
@@ -359,8 +365,8 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
                 rows = []
             if not rows:
                 continue
-            with db() as conn:
-                nm = _entity_name(conn, fid) or ""
+            with db() as cur:
+                nm = _entity_name(cur, fid) or ""
             for r in rows:
                 fin_lines.append(
                     f"- [{nm}] {r.get('period')}: revenue={r.get('revenue')} "
@@ -411,10 +417,11 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
             pids.add(effective_entity_id)
         plines = []
         if pids:
-            with db() as conn:
+            with db() as cur:
                 for pid in pids:
-                    r = conn.execute("SELECT name, type, industry, notes FROM entities WHERE id=?",
-                                     (pid,)).fetchone()
+                    cur.execute("SELECT name, type, industry, notes FROM entities WHERE id=%s",
+                                (pid,))
+                    r = cur.fetchone()
                     if r and r["notes"] and str(r["notes"]).strip():
                         plines.append(f"- [{r['name']}] ({r['type']} · {r['industry'] or '-'}) "
                                       f"ประวัติ/โปรไฟล์: {str(r['notes']).strip()}")
@@ -424,8 +431,8 @@ def answer(query, user, history=None, entity_id=None, model_key="haiku", web_sea
 
     scope_line = ""
     if effective_entity_id:
-        with db() as conn:
-            _scope_nm = _entity_name(conn, effective_entity_id)
+        with db() as cur:
+            _scope_nm = _entity_name(cur, effective_entity_id)
         if _scope_nm:
             scope_line = ("SELECTED COMPANY (the user has explicitly scoped this question to this "
                           "company via the UI — answer about THIS company and do NOT ask which "

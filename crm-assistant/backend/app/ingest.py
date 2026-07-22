@@ -102,9 +102,7 @@ def chunk_text(text: str, target=700, overlap=120):
 def ingest_chunks(texts, *, entity_id=None, document_id=None, interaction_id=None,
                   sensitivity=1, department="general", source_label=None,
                   created_by=None, default_label=None, image_path=None):
-    """Classify (fact/opinion), embed, and store a list of text chunks.
-    default_label: if provided ('fact'/'opinion'), skip auto-classification (user tagged).
-    image_path: if provided, attached to the FIRST chunk so it can be shown later."""
+    """Classify (fact/opinion), embed, and store a list of text chunks."""
     texts = [t for t in texts if t and t.strip()]
     if not texts:
         return 0
@@ -116,14 +114,14 @@ def ingest_chunks(texts, *, entity_id=None, document_id=None, interaction_id=Non
 
     vecs = bedrock.embed(texts, input_type="search_document")
 
-    with db() as conn:
+    with db() as cur:
         for idx, (text, tag, vec) in enumerate(zip(texts, tags, vecs)):
-            conn.execute(
+            cur.execute(
                 """INSERT INTO chunks
                    (entity_id, document_id, interaction_id, text, fact_or_opinion,
                     fo_confidence, source_person, source_label, sensitivity, department,
                     embedding, image_path, created_by)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (entity_id, document_id, interaction_id, text, tag["label"],
                  tag["confidence"], tag.get("source_person"), source_label,
                  sensitivity, department, dumps_vec(vec),

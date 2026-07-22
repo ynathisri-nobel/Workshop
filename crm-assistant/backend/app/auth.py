@@ -39,8 +39,9 @@ def get_current_user(token: str = Depends(oauth2)) -> dict:
         payload = jwt.decode(token, config.JWT_SECRET, algorithms=[config.JWT_ALG])
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    with db() as conn:
-        row = conn.execute("SELECT * FROM users WHERE id=?", (payload["sub"],)).fetchone()
+    with db() as cur:
+        cur.execute("SELECT * FROM users WHERE id=%s", (payload["sub"],))
+        row = cur.fetchone()
     if not row:
         raise HTTPException(status_code=401, detail="User not found")
     return dict(row)
@@ -52,8 +53,9 @@ def user_from_token(token: str) -> dict:
         payload = jwt.decode(token, config.JWT_SECRET, algorithms=[config.JWT_ALG])
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    with db() as conn:
-        row = conn.execute("SELECT * FROM users WHERE id=?", (payload["sub"],)).fetchone()
+    with db() as cur:
+        cur.execute("SELECT * FROM users WHERE id=%s", (payload["sub"],))
+        row = cur.fetchone()
     if not row:
         raise HTTPException(status_code=401, detail="User not found")
     return dict(row)
@@ -93,11 +95,11 @@ def sql_access_filter(user: dict, table_alias: str = ""):
     """Build a SQL WHERE fragment + params enforcing sensitivity + department.
     Returns (clause_str, params_list). clause does NOT include leading AND."""
     prefix = f"{table_alias}." if table_alias else ""
-    clauses = [f"{prefix}sensitivity <= ?"]
+    clauses = [f"{prefix}sensitivity <= %s"]
     params = [user["allowed_sensitivity"]]
     depts = visible_departments(user)
     if depts is not None:
-        placeholders = ",".join("?" for _ in depts)
+        placeholders = ",".join("%s" for _ in depts)
         clauses.append(f"{prefix}department IN ({placeholders})")
         params.extend(sorted(depts))
     return " AND ".join(clauses), params

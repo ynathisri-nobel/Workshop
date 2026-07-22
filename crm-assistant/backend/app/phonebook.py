@@ -19,12 +19,13 @@ def contacts_for(entity_ids):
     ids = [i for i in set(entity_ids or []) if i]
     if not ids:
         return []
-    placeholders = ",".join("?" for _ in ids)
+    placeholders = ",".join("%s" for _ in ids)
     sql = (f"SELECT c.entity_id, e.name AS entity_name, c.person_name, c.title, "
            f"c.phone, c.email "
            f"FROM contacts c LEFT JOIN entities e ON e.id = c.entity_id "
            f"WHERE c.entity_id IN ({placeholders}) "
            f"ORDER BY c.entity_id, c.id")
-    with db() as conn:
-        rows = conn.execute(sql, ids).fetchall()
+    with db() as cur:
+        cur.execute(sql, ids)
+        rows = cur.fetchall()
     return [dict(r) for r in rows]
